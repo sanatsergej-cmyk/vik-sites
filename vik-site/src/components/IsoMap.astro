@@ -1,0 +1,62 @@
+---
+// Изометрический рендер (public/gen/iso-*.jpg, 1920×1072) с выносками: HTML-маркеры «номер + подпись».
+// На широком экране подпись стоит рядом с точкой (side: r|l|u|d), на узком экране (≤ 760 px) на картинке
+// только номера, подписи — нумерованным списком под ней. Маркеры появляются при прокрутке (только с JS
+// и без reduced-motion: класс .motion ставит Base.astro); без JS всё видно сразу.
+// pins: { x, y — % картинки; label; href? — тогда маркер и пункт списка становятся ссылками; side; hue? }.
+import { artLabel } from '../data/visual';
+type Pin = { x: number; y: number; label: string; href?: string; side?: 'r' | 'l' | 'u' | 'd'; hue?: string };
+const { name, alt, pins = [] as Pin[], class: cls = '', eager = false, sizes = '(max-width: 1240px) 100vw, 1200px', listLabel = 'Обозначения на иллюстрации' } = Astro.props;
+const b = `/gen/${name}`;
+const pad = (i: number) => String(i + 1).padStart(2, '0');
+---
+<figure class:list={['iso', cls]} data-iso>
+  <div class="iso-stage">
+    <picture>
+      <source type="image/webp" srcset={`${b}-960.webp 960w, ${b}.webp 1920w`} sizes={sizes} />
+      <img src={`${b}.jpg`} alt={alt} width="1920" height="1072" loading={eager ? 'eager' : 'lazy'} decoding="async" />
+    </picture>
+    <ol class="iso-pins">
+      {pins.map((p: Pin, i: number) => {
+        const st = `--x:${p.x}%;--y:${p.y}%;--i:${i}${p.hue ? `;--hue:${p.hue}` : ''}`;
+        const inner = (
+          <>
+            <span class="pin-dot"><span>{pad(i)}</span></span>
+            <span class="pin-label">{p.label}</span>
+          </>
+        );
+        return (
+          <li class:list={['iso-pin', `pin--${p.side ?? 'r'}`]} style={st}>
+            {p.href ? <a class="pin-hit" href={p.href} aria-label={`${pad(i)}. ${p.label}`}>{inner}</a> : <span class="pin-hit">{inner}</span>}
+          </li>
+        );
+      })}
+    </ol>
+    <span class="media-label iso-label">{artLabel}</span>
+  </div>
+  <figcaption class="iso-legend">
+    <span class="sr-only">{listLabel}</span>
+    <ol>
+      {pins.map((p: Pin, i: number) => (
+        <li style={p.hue ? `--hue:${p.hue}` : undefined}>
+          {p.href ? <a href={p.href}><span class="il-n">{pad(i)}</span><span>{p.label}</span></a> : <><span class="il-n">{pad(i)}</span><span>{p.label}</span></>}
+        </li>
+      ))}
+    </ol>
+  </figcaption>
+</figure>
+
+<script>
+  // Появление маркеров при прокрутке: один раз, когда картинка на треть в кадре.
+  const els = document.querySelectorAll<HTMLElement>('[data-iso]');
+  if (document.documentElement.classList.contains('motion') && 'IntersectionObserver' in window) {
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach((e) => {
+        if (e.isIntersecting) { e.target.classList.add('is-in'); io.unobserve(e.target); }
+      });
+    }, { threshold: 0.33 });
+    els.forEach((el) => io.observe(el));
+  } else {
+    els.forEach((el) => el.classList.add('is-in'));
+  }
+</script>

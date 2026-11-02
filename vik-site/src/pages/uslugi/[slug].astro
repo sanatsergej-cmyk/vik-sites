@@ -4,10 +4,9 @@ import Icon from '../../components/Icon.astro';
 import GenPic from '../../components/GenPic.astro';
 import Pic from '../../components/Pic.astro';
 import IntakeForm from '../../components/IntakeForm.astro';
-import ServiceArt from '../../components/ServiceArt.astro';
 import { directions, services, serviceByPath, articles, cta } from '../../content/index.mjs';
 import { photos } from '../../content/photos.mjs';
-import { dirVisual, photosOn } from '../../data/visual';
+import { dirVisual, photosOn, artLabel } from '../../data/visual';
 
 export function getStaticPaths() {
   return services.map((s) => ({ params: { slug: s.slug }, props: { s } }));
@@ -24,28 +23,20 @@ const groups: Record<string, { label: string; href: string }> = {
 };
 const g = groups[s.group] ?? groups.main;
 
-// Композиция страницы по смыслу услуги (волна 2). hero: 'art' — схема в шапке, ситуации отдельной лентой;
-// 'sit' — ситуации в шапке. scope: bento | table | stack. steps: strip | split | timeline | quest | cycle.
-type Layout = { hero: 'art' | 'sit'; scope: 'bento' | 'table' | 'stack'; steps: 'strip' | 'split' | 'timeline' | 'quest' | 'cycle' };
+// Композиция страницы по смыслу услуги. В шапке — кадр svc-<slug> (ИИ-иллюстрация с подписью), без рисованных схем.
+// scope: bento | table | stack. steps: strip (лента) | list (нумерованный список с заголовком сбоку) | timeline (с фото).
+type Layout = { scope: 'bento' | 'table' | 'stack'; steps: 'strip' | 'list' | 'timeline'; stepsTitle?: string };
 const layouts: Record<string, Layout> = {
-  'tekhnicheskiy-zakazchik': { hero: 'art', scope: 'table', steps: 'strip' },
-  'proektirovanie-i-soglasovaniya': { hero: 'art', scope: 'bento', steps: 'strip' },
-  'soglasovanie-rso': { hero: 'art', scope: 'bento', steps: 'strip' },
-  smr: { hero: 'art', scope: 'bento', steps: 'timeline' },
-  'dokumentatsiya-i-sdacha': { hero: 'art', scope: 'stack', steps: 'strip' },
-  'tekhprisoedinenie-i-tu': { hero: 'sit', scope: 'bento', steps: 'quest' },
-  'vynos-setey': { hero: 'art', scope: 'bento', steps: 'strip' },
-  ekspertiza: { hero: 'sit', scope: 'bento', steps: 'cycle' },
+  'tekhnicheskiy-zakazchik': { scope: 'table', steps: 'strip' },
+  'proektirovanie-i-soglasovaniya': { scope: 'bento', steps: 'strip' },
+  'soglasovanie-rso': { scope: 'bento', steps: 'strip' },
+  smr: { scope: 'bento', steps: 'timeline' },
+  'dokumentatsiya-i-sdacha': { scope: 'stack', steps: 'strip' },
+  'tekhprisoedinenie-i-tu': { scope: 'bento', steps: 'list', stepsTitle: 'От запроса ТУ до договора' },
+  'vynos-setey': { scope: 'bento', steps: 'strip' },
+  ekspertiza: { scope: 'bento', steps: 'list' },
 };
-const L: Layout = layouts[s.slug] ?? { hero: 'sit', scope: 'bento', steps: 'split' };
-const artCaption: Record<string, string> = {
-  'tekhnicheskiy-zakazchik': 'Схема ответственности',
-  'proektirovanie-i-soglasovaniya': 'Стадии и маршрут согласований',
-  'soglasovanie-rso': 'Организации и путь документа',
-  smr: 'Работы на площадке',
-  'dokumentatsiya-i-sdacha': 'Комплект документов',
-  'vynos-setey': 'До и после',
-};
+const L: Layout = layouts[s.slug] ?? { scope: 'bento', steps: 'list' };
 const shots = photosOn ? photos.filter((p: any) => !p.ai) : [];
 ---
 <Base
@@ -55,9 +46,7 @@ const shots = photosOn ? photos.filter((p: any) => !p.ai) : [];
   crumbs={[{ name: 'Главная', href: '/' }, { name: s.label, href: path }]}
 >
   <div class:list={['svc-page', `svc--${s.slug}`, `svc-g--${s.group}`]}>
-    <section class="page-hero ph-has-bg" data-parallax>
-      <div class="ph-bg" data-depth="0.18" aria-hidden="true"><GenPic name={`svc-${s.slug}`} alt="" eager /></div>
-      <span class="media-label ph-label">Иллюстрация</span>
+    <section class="page-hero">
       <div class="container ph-grid">
         <div class="ph-copy">
           <p class="crumbs"><a href="/">Главная</a><span class="sep"></span><a href={g.href}>{g.label}</a><span class="sep"></span>{s.label}</p>
@@ -67,32 +56,20 @@ const shots = photosOn ? photos.filter((p: any) => !p.ai) : [];
           <p class="lead">{s.lead}</p>
           <a class="btn btn-gold" href={`?service=${s.id}#intake`}><span>{cta.primary}</span><span class="btn-ico"><Icon name="arrow" size={16} /></span></a>
         </div>
-        {L.hero === 'art' ? (
-          <div class="ph-art">
-            <div class="bezel"><div class="bezel-core"><ServiceArt slug={s.slug} /></div></div>
-            <p class="ph-art-caption"><span>{artCaption[s.slug] ?? 'Схема'}</span><span>{s.label}</span></p>
-          </div>
-        ) : (
-          <div class="ph-side bezel">
-            <div class="bezel-core">
-              <p class="eyebrow">Когда к нам обращаются</p>
-              <ol class="sit-list">{s.situations.map((x: string, i: number) => <li><span>{pad(i)}</span>{x}</li>)}</ol>
-            </div>
-          </div>
-        )}
+        <figure class="ph-shot">
+          <div class="ph-shot-img"><GenPic name={`svc-${s.slug}`} alt={`Иллюстрация к услуге «${s.label}»`} eager sizes="(max-width: 900px) 92vw, 44vw" /><span class="media-label">{artLabel}</span></div>
+        </figure>
       </div>
     </section>
 
-    {L.hero === 'art' && (
-      <section class="section sit-sec">
-        <div class="container">
-          <div class="section-head" data-reveal><p class="eyebrow">Ситуации</p><h2>Когда к нам обращаются</h2></div>
-          <ol class="sit-strip" style={`--c:${s.situations.length === 6 ? 3 : Math.min(5, s.situations.length)}`}>
-            {s.situations.map((x: string, i: number) => <li data-reveal style={`--i:${i}`}><span class="ss-n">{pad(i)}</span><p>{x}</p></li>)}
-          </ol>
-        </div>
-      </section>
-    )}
+    <section class="section sit-sec">
+      <div class="container">
+        <div class="section-head" data-reveal><p class="eyebrow">Ситуации</p><h2>Когда к нам обращаются</h2></div>
+        <ol class="sit-strip" style={`--c:${s.situations.length === 6 ? 3 : Math.min(5, s.situations.length)}`}>
+          {s.situations.map((x: string, i: number) => <li data-reveal style={`--i:${i}`}><span class="ss-n">{pad(i)}</span><p>{x}</p></li>)}
+        </ol>
+      </div>
+    </section>
 
     <section class="section">
       <div class="container">
@@ -175,20 +152,14 @@ const shots = photosOn ? photos.filter((p: any) => !p.ai) : [];
 
     <section class="section">
       <div class="container">
-        {L.steps === 'split' ? (
-          <div class="split-steps">
-            <div class="ss-visual">
-              <div class="bezel"><div class="bezel-core"><ServiceArt slug={s.slug} /></div></div>
-              <p class="ph-art-caption"><span>Схема работ</span><span>{s.label}</span></p>
-            </div>
-            <div>
-              <div class="section-head" data-reveal><p class="eyebrow">Процесс</p><h2>Как проходит работа</h2></div>
-              <ol class="route-strip">
-                {s.steps.map((r: { t: string; d: string }, i: number) => (
-                  <li data-step><span class="rs-node"><span>{pad(i)}</span></span><div class="rs-body"><strong>{r.t}</strong><p>{r.d}</p></div></li>
-                ))}
-              </ol>
-            </div>
+        {L.steps === 'list' ? (
+          <div class="steps-2col">
+            <div class="section-head" data-reveal><p class="eyebrow">Процесс</p><h2>{L.stepsTitle ?? 'Как проходит работа'}</h2><p>{s.cardLead}</p></div>
+            <ol class="num-steps">
+              {s.steps.map((r: { t: string; d: string }, i: number) => (
+                <li data-reveal style={`--i:${i}`}><span class="ns-n">{pad(i)}</span><div><strong>{r.t}</strong><p>{r.d}</p></div></li>
+              ))}
+            </ol>
           </div>
         ) : L.steps === 'timeline' ? (
           <>
@@ -208,35 +179,6 @@ const shots = photosOn ? photos.filter((p: any) => !p.ai) : [];
               })}
             </ol>
           </>
-        ) : L.steps === 'quest' ? (
-          <>
-            <div class="quest-head">
-              <div class="section-head" data-reveal><p class="eyebrow">Маршрут заявки</p><h2>От запроса ТУ до договора</h2><p>{s.cardLead}</p></div>
-              <div class="quest-art" data-reveal><ServiceArt slug={s.slug} /></div>
-            </div>
-            <ol class="quest">
-              {s.steps.map((r: { t: string; d: string }, i: number) => (
-                <li data-reveal style={`--i:${i}`}>
-                  <span class="q-flag"><Icon name="route" size={18} /></span>
-                  <span class="q-n">Шаг {i + 1}</span>
-                  <strong>{r.t}</strong>
-                  <p>{r.d}</p>
-                </li>
-              ))}
-            </ol>
-          </>
-        ) : L.steps === 'cycle' ? (
-          <div class="cycle-wrap">
-            <div class="cycle-art" data-reveal><div class="bezel"><div class="bezel-core"><ServiceArt slug={s.slug} /></div></div><p class="ph-art-caption"><span>Цикл замечаний</span><span>{s.label}</span></p></div>
-            <div>
-              <div class="section-head" data-reveal><p class="eyebrow">Процесс</p><h2>Как проходит работа</h2></div>
-              <ol class="cycle-list">
-                {s.steps.map((r: { t: string; d: string }, i: number) => (
-                  <li data-reveal style={`--i:${i}`}><span class="cy-n">{pad(i)}</span><div><strong>{r.t}</strong><p>{r.d}</p></div></li>
-                ))}
-              </ol>
-            </div>
-          </div>
         ) : (
           <>
             <div class="section-head" data-reveal><p class="eyebrow">Процесс</p><h2>Как проходит работа</h2></div>

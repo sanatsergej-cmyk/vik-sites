@@ -4,7 +4,7 @@ import Icon from '../components/Icon.astro';
 import Pic from '../components/Pic.astro';
 import IntakeForm from '../components/IntakeForm.astro';
 import PipelineScene from '../components/PipelineScene.astro';
-import SystemArt from '../components/SystemArt.astro';
+import IsoMap from '../components/IsoMap.astro';
 import ClientsBlock from '../components/ClientsBlock.astro';
 import Gallery from '../components/Gallery.astro';
 import GenPic from '../components/GenPic.astro';
@@ -13,7 +13,7 @@ import {
   manufacturers, energy, mission, companyBlock, cta,
 } from '../content/index.mjs';
 import { photos, photosNote } from '../content/photos.mjs';
-import { dirVisual, photosOn, artLabel } from '../data/visual';
+import { dirVisual, photosOn, artLabel, kompleksPins } from '../data/visual';
 
 const tc = services.find((s) => s.id === 'technical-customer');
 const photoById = Object.fromEntries(photos.map((p) => [p.id, p]));
@@ -26,6 +26,7 @@ const smrCards = directions.map((d) => {
   const items = d.scopeGroups.flatMap((g) => g.items).slice(0, 4);
   return { d, v, ph, items };
 });
+const smrPins = directions.map((d) => ({ ...kompleksPins[d.slug], label: d.label, href: `/napravleniya/${d.slug}/`, hue: dirVisual[d.slug].hue }));
 const dust = Array.from({ length: 14 }, (_, i) => ({
   x: (i * 37 + 11) % 100,
   d: 9 + ((i * 7) % 9),
@@ -289,6 +290,7 @@ const dust = Array.from({ length: 14 }, (_, i) => ({
           </div>
           <p>{home.smr.text}</p>
         </div>
+        <IsoMap class="iso--home" name="iso-kompleks" alt="Иллюстрация: здание и все инженерные сети в разрезе" pins={smrPins} listLabel="Системы на иллюстрации" />
       </div>
       <div class="smr-scroller">
         <div class="smr-grid">
@@ -298,13 +300,11 @@ const dust = Array.from({ length: 14 }, (_, i) => ({
                 <div class="smr-media">
                   {ph ? (
                     <Pic base={ph.src.replace(/\.jpg$/, '')} alt={ph.alt} width={750} height={1000} small sizes="(max-width: 760px) 82vw, 40vw" />
-                  ) : v.art ? (
-                    <Pic base={v.art} alt={v.artAlt} width={v.artW} height={v.artH} sizes="(max-width: 760px) 82vw, 40vw" />
                   ) : (
-                    <SystemArt slug={d.slug} />
+                    <GenPic name={`dir-${d.slug}`} alt="" sizes="(max-width: 760px) 82vw, 40vw" />
                   )}
                   <span class="smr-badge"><Icon name={d.icon} size={24} /></span>
-                  {(ph || v.art) && <span class="media-label">{ph ? ph.cap : artLabel}</span>}
+                  <span class="media-label">{ph ? ph.cap : artLabel}</span>
                 </div>
                 <div class="smr-body">
                   <h3>{d.label}</h3>

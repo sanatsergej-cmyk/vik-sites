@@ -50,6 +50,7 @@ const breadcrumbLd =
         try { if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches && 'IntersectionObserver' in window) d.classList.add('motion'); } catch (e) {}
       })();
     </script>
+    {intro && <link rel="preload" as="image" href="/brand/emblem-cut.webp" type="image/webp" fetchpriority="high" />}
     {intro && (
       <script is:inline>
         (function () {

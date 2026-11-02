@@ -1,0 +1,10 @@
+---
+// Оригинальная растровая эмблема ВиК (public/brand/emblem-cut, 825×575) с srcset для retina.
+// sizes — ширина эмблемы на странице: шапка '46px', подвал '120px', крупные места — vw.
+const { class: cls = '', sizes = '120px', alt = 'Эмблема ВиК', loading = 'lazy', fetchpriority } = Astro.props;
+const b = '/brand/emblem-cut';
+---
+<picture class={cls}>
+  <source type="image/webp" srcset={`${b}-120.webp 120w, ${b}-240.webp 240w, ${b}-360.webp 360w, ${b}.webp 825w`} sizes={sizes} />
+  <img src={`${b}-240.png`} srcset={`${b}-120.png 120w, ${b}-240.png 240w, ${b}-360.png 360w, ${b}.png 825w`} sizes={sizes} alt={alt} width="825" height="575" loading={loading} decoding="async" fetchpriority={fetchpriority} />
+</picture>

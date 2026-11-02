@@ -1,7 +1,7 @@
 ---
 import { nav, cta } from '../content/index.mjs';
 import Icon from './Icon.astro';
-import EmblemVector from './EmblemVector.astro';
+import Emblem from './Emblem.astro';
 const { path } = Astro.props;
 const cur = (p: string) => (path === p ? 'page' : undefined);
 const inDir = path?.startsWith('/napravleniya/');
@@ -13,7 +13,7 @@ const ctaHref = ['/dokumenty/', '/privacy/', '/consent/', '/404/'].includes(path
 <header class="site-header" data-header>
   <div class="header-inner">
     <a class="brand" href="/" aria-label="ВиК — на главную">
-      <EmblemVector class="brand-mark" idp="hd" />
+      <Emblem class="brand-mark" sizes="46px" alt="" loading="eager" />
       <span class="brand-word">ВиК</span>
     </a>
     <nav id="main-nav" class="main-nav" aria-label="Основная навигация">

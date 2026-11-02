@@ -5,10 +5,10 @@ import GenPic from '../../components/GenPic.astro';
 import Pic from '../../components/Pic.astro';
 import IntakeForm from '../../components/IntakeForm.astro';
 import Gallery from '../../components/Gallery.astro';
-import SystemArt from '../../components/SystemArt.astro';
+import IsoMap from '../../components/IsoMap.astro';
 import { directions, serviceByPath, articles, cta } from '../../content/index.mjs';
 import { photos } from '../../content/photos.mjs';
-import { dirVisual, photosOn, artLabel } from '../../data/visual';
+import { dirVisual, photosOn, artLabel, isoPins } from '../../data/visual';
 
 export function getStaticPaths() {
   return directions.map((d) => ({ params: { slug: d.slug }, props: { d } }));
@@ -22,6 +22,11 @@ const idx = directions.findIndex((x) => x.slug === d.slug);
 const pad = (i: number) => String(i + 1).padStart(2, '0');
 const reads = articles.filter((a: any) => a.related.includes(path)).slice(0, 3);
 // подписи шагов по теме системы (вода — участки потока, тепло — пара линий, электро — участки цепи, вентиляция — зоны здания, газ — трасса)
+// выноски на изометрическом рендере системы: подписи берутся из состава (scopeGroups) и шагов (steps) направления
+const pins = (isoPins[d.slug] ?? []).map((p) => ({
+  x: p.x, y: p.y, side: p.side,
+  label: p.ref[0] === 'scope' ? d.scopeGroups[p.ref[1]]?.items[p.ref[2]] : d.steps[p.ref[1]]?.t,
+})).filter((p) => p.label);
 const stepsTitle: Record<string, string> = { vodosnabzhenie: 'Путь воды: от баланса до сдачи', teplosnabzhenie: 'Подающая и обратная: маршрут работ', elektrosnabzhenie: 'Цепь работ: участок за участком', ventilyatsiya: 'Зоны здания: от венткамеры до кровли', gazosnabzhenie: 'Трасса работ: от точки подключения до объекта' };
 ---
 <Base
@@ -34,7 +39,7 @@ const stepsTitle: Record<string, string> = { vodosnabzhenie: 'Путь воды:
     <section class="page-hero ph-has-bg" data-parallax>
       <div class="ph-bg" data-depth="0.18" aria-hidden="true"><GenPic name={`dir-${d.slug}`} alt="" eager /></div>
       <span class="media-label ph-label">Иллюстрация</span>
-      <div class="container ph-grid">
+      <div class="container ph-grid ph-grid--solo">
         <div class="ph-copy">
           <p class="crumbs"><a href="/">Главная</a><span class="sep"></span><a href="/#napravleniya">Направления</a><span class="sep"></span>{d.label}</p>
           <span class="ph-icon"><Icon name={d.icon} size={32} /></span>
@@ -44,10 +49,16 @@ const stepsTitle: Record<string, string> = { vodosnabzhenie: 'Путь воды:
           <p class="ph-meta"><span><strong>Объекты:</strong> {d.objects}</span></p>
           <a class="btn btn-gold" href={`?direction=${d.slug}#intake`}><span>{cta.primary}</span><span class="btn-ico"><Icon name="arrow" size={16} /></span></a>
         </div>
-        <div class="ph-art">
-          <div class="bezel"><div class="bezel-core"><SystemArt slug={d.slug} /></div></div>
-          <p class="ph-art-caption"><span>Схема системы</span><span>{d.label}</span></p>
+      </div>
+    </section>
+
+    <section class="section iso-sec">
+      <div class="container">
+        <div class="section-head split" data-reveal>
+          <div><p class="eyebrow">{d.label}</p><h2>Система в разрезе</h2></div>
+          <p>{d.cardLead}</p>
         </div>
+        <IsoMap name={`iso-${d.slug}`} alt={`Иллюстрация: ${d.label.toLowerCase()} в изометрическом разрезе`} pins={pins} />
       </div>
     </section>
 
@@ -133,7 +144,7 @@ const stepsTitle: Record<string, string> = { vodosnabzhenie: 'Путь воды:
     <section class="section">
       <div class="container">
         <div class="section-head split" data-reveal><div><p class="eyebrow">Маршрут</p><h2>{stepsTitle[d.slug] ?? 'Маршрут работ'}</h2></div><p>{d.cardLead}</p></div>
-        <ol class:list={['dsteps', `dsteps--${d.slug}`]}>
+        <ol class="dsteps">
           {d.steps.map((r: { t: string; d: string }, i: number) => (
             <li data-step style={`--i:${i}`}>
               <span class="ds-node"><span>{pad(i)}</span></span>
