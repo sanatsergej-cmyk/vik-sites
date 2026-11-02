@@ -1,0 +1,177 @@
+---
+import Base from '../../layouts/Base.astro';
+import IsoSystem from '../../components/IsoSystem.astro';
+import Photo from '../../components/Photo.astro';
+import Intake from '../../components/Intake.astro';
+import DirFlow from '../../components/DirFlow.astro';
+import { directions, serviceByPath, cta, photos, photosNote } from '../../content.mjs';
+import { ui } from '../../ui.mjs';
+
+export function getStaticPaths() {
+  return directions.map((d) => ({ params: { slug: d.slug }, props: { d } }));
+}
+const { d } = Astro.props;
+const path = `/napravleniya/${d.slug}/`;
+const related = d.related.map((r) => serviceByPath(r)).filter(Boolean);
+const showPhotos = import.meta.env.PUBLIC_PHOTOS === '1';
+const ph = showPhotos ? photos.filter((x) => x.dir === d.slug) : [];
+const others = directions.filter((x) => x.slug !== d.slug);
+const sysVar = { vodosnabzhenie: 'water', teplosnabzhenie: 'heat', elektrosnabzhenie: 'elec', ventilyatsiya: 'vent', gazosnabzhenie: 'gas' };
+const idx = directions.findIndex((x) => x.slug === d.slug);
+---
+<Base
+  title={d.title}
+  description={d.description}
+  path={path}
+  crumbs={[{ name: ui.home, href: '/' }, { name: d.label, href: path }]}
+>
+  <section class="page-hero dir-hero" style={`--c:var(--sys-${sysVar[d.slug]})`}>
+    <div class="container dir-hero-grid">
+      <div class="dir-copy">
+        <p class="crumbs"><a href="/">{ui.home}</a> <span aria-hidden="true">/</span> {d.label}</p>
+        <p class="mono-label"><span class="sys-dot"></span>{d.eyebrow} {String(idx + 1).padStart(2, '0')}</p>
+        <h1>{d.h1}</h1>
+        <p class="lead">{d.lead}</p>
+        <p class="muted measure">{ui.page.objects} {d.objects}</p>
+        <div class="cta-row">
+          <a class="btn btn-primary" href={`?direction=${d.slug}#intake`}>{cta.primary}<span aria-hidden="true">→</span></a>
+          <a class="btn btn-ghost" href="/">{ui.toHome}</a>
+        </div>
+      </div>
+      <figure class="dir-scheme">
+        <p class="mono-label">{ui.page.scheme}</p>
+        <IsoSystem slug={d.slug} variant="scheme" />
+      </figure>
+    </div>
+  </section>
+
+  <div class="dir-body" style={`--c:var(--sys-${sysVar[d.slug]})`}>
+  <section class="section sit">
+    <div class="container sit-grid">
+      <div class="sit-head rv">
+        <p class="mono-label"><span class="sys-dot"></span>{d.label}</p>
+        <h2>{ui.page.situations}</h2>
+      </div>
+      <ol class="sit-list">
+        {d.situations.map((x, i) => <li class="rv" style={`--i:${i % 3}`}><span class="mono">{String(i + 1).padStart(2, '0')}</span><p>{x}</p></li>)}
+      </ol>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container"><DirFlow d={d} /></div>
+  </section>
+
+  <section class="section">
+    <div class="container two">
+      <div class="rv">
+        <h2>{ui.page.scope}</h2>
+        {d.scopeGroups.map((g) => (
+          <div class="group">
+            <h3 class="mono-label">{g.title}</h3>
+            <ul class="tick-list">{g.items.map((x) => <li>{x}</li>)}</ul>
+          </div>
+        ))}
+      </div>
+      <div class="rv">
+        <h2>{ui.page.inputs}</h2>
+        <ul class="tick-list">{d.inputs.map((x) => <li>{x}</li>)}</ul>
+        <p class="muted">{ui.page.noDocs}</p>
+        <div class="note-box">
+          <h3>{d.approvers.title}</h3>
+          <p class="muted">{d.approvers.text}</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  {ph.length > 0 && (
+    <section class="section dir-photos">
+      <div class="container">
+        <div class="section-head rv"><h2>{ui.page.photos}</h2></div>
+        <div class:list={['gallery', `n${ph.length}`]}>
+          {ph.map((x) => <Photo ph={x} sizes="(max-width: 700px) 90vw, 400px" cls="rv" />)}
+        </div>
+        <p class="small muted note" data-placeholder>{photosNote}</p>
+      </div>
+    </section>
+  )}
+
+  <section class="section">
+    <div class="container norms-grid">
+      <div class="rv">
+        <h2>{ui.page.norms}</h2>
+        <p class="small muted mono">{ui.page.normsChecked}</p>
+      </div>
+      <div class="table-wrap rv">
+        <table class="norms">
+          <thead><tr><th scope="col">{ui.page.normsCols[0]}</th><th scope="col">{ui.page.normsCols[1]}</th></tr></thead>
+          <tbody>{d.norms.map((x) => <tr><th scope="row" class="mono">{x.t}</th><td>{x.d}</td></tr>)}</tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container">
+      <div class="section-head rv"><h2>{ui.page.pitfalls}</h2></div>
+      <ol class="pit">
+        {d.pitfalls.map((x, i) => (
+          <li class="rv">
+            <div class="pit-bad"><span class="mono">{ui.page.pitfallBad} {String(i + 1).padStart(2, '0')}</span><strong>{x.t}</strong></div>
+            <div class="pit-fix"><span class="mono">{ui.page.pitfallFix}</span><p>{x.d}</p></div>
+          </li>
+        ))}
+      </ol>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container outs-grid">
+      <h2 class="rv">{ui.page.outputs}</h2>
+      <ol class="outs">
+        {d.outputs.map((x, i) => <li class="rv" style={`--i:${i}`}><span class="mono">{String(i + 1).padStart(2, '0')}</span>{x}</li>)}
+      </ol>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container">
+      <div class="section-head rv"><h2>{ui.page.whichWork}</h2><p class="muted">{ui.page.whichWorkText}</p></div>
+      <div class="spec spec-wide">
+        {related.map((s, i) => (
+          <a class="spec-row rv" href={`/uslugi/${s.slug}/?direction=${d.slug}`}>
+            <span class="mono spec-n">{String(i + 1).padStart(2, '0')}</span>
+            <span class="spec-body"><strong>{s.label}</strong><small>{s.cardLead}</small></span>
+            <span class="spec-arr" aria-hidden="true">→</span>
+          </a>
+        ))}
+      </div>
+      <p class="boundary">{ui.page.routeNote}</p>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container narrow">
+      <div class="section-head rv"><h2>{ui.page.faqDir}</h2></div>
+      {d.faq.map((f) => <details class="q"><summary>{f.q}</summary><p>{f.a}</p></details>)}
+    </div>
+  </section>
+
+  </div>
+
+  <section class="section other-sys">
+    <div class="container">
+      <p class="mono-label">{ui.page.otherSystems}</p>
+      <ul class="sys-tiles sys-tiles-sm">
+        {others.map((o) => (
+          <li style={`--c:var(--sys-${sysVar[o.slug]})`}>
+            <a href={`/napravleniya/${o.slug}/`}><IsoSystem slug={o.slug} /><strong>{o.label}</strong></a>
+          </li>
+        ))}
+      </ul>
+    </div>
+  </section>
+
+  <Intake />
+</Base>

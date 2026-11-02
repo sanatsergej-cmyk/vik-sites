@@ -1,0 +1,48 @@
+---
+import Base from '../../layouts/Base.astro';
+import IntakeForm from '../../components/IntakeForm.astro';
+import { cases, cta } from '../../content/index.mjs';
+
+export function getStaticPaths() {
+  return cases.map((c) => ({ params: { slug: c.slug }, props: { c } }));
+}
+const { c } = Astro.props;
+const path = `/proekty/${c.slug}/`;
+---
+<Base
+  title={`${c.title} | ВиК`}
+  description={c.task}
+  path={path}
+  crumbs={[{ name: 'Главная', href: '/' }, { name: 'Проекты', href: '/proekty/' }, { name: c.title, href: path }]}
+>
+  <section class="page-hero">
+    <div class="container">
+      <p class="crumbs"><a href="/">Главная</a><span class="sep"></span><a href="/proekty/">Проекты</a><span class="sep"></span>{c.title}</p>
+      <p class="eyebrow">Проект</p>
+      <h1>{c.title}</h1>
+      <p class="lead">{c.task}</p>
+      <p class="ph-meta"><span><strong>Объект:</strong> {c.object}{c.year && `, ${c.year}`}</span></p>
+    </div>
+  </section>
+  <section class="section">
+    <div class="container two">
+      <div>
+        <h2>Роль компании</h2>
+        <p class="muted">{c.role}{c.partnerNote && `. ${c.partnerNote}`}</p>
+        <h2 style="margin-top:28px">Что сделано</h2>
+        <ul class="list">{c.scope.map((x) => <li>{x}</li>)}</ul>
+      </div>
+      <div>
+        {c.approvals.length > 0 && (<><h2>Согласования</h2><ul class="list">{c.approvals.map((x) => <li>{x}</li>)}</ul></>)}
+        {c.result.length > 0 && (<><h2 style="margin-top:28px">Результат</h2><ul class="list">{c.result.map((x) => <li>{x}</li>)}</ul></>)}
+        {c.documents.length > 0 && (<><h2 style="margin-top:28px">Документы</h2><ul class="list">{c.documents.map((x) => <li>{x}</li>)}</ul></>)}
+      </div>
+    </div>
+    {c.images.length > 0 && (
+      <div class="container gallery" style="margin-top:32px">
+        {c.images.map((im) => <figure class="shot"><div class="shot-img"><img src={im.src} alt={im.alt} loading="lazy" /></div></figure>)}
+      </div>
+    )}
+  </section>
+  <IntakeForm title={cta.similar} />
+</Base>

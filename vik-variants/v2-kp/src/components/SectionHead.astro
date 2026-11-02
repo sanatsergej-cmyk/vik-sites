@@ -1,0 +1,16 @@
+---
+// Заголовок секции: номер, подпись и узел трубопровода (якорь для линии на главной).
+const { n, label, title, text, id, tag = 'h2', node = true } = Astro.props;
+const H = tag;
+---
+<header class="shead rv" id={id}>
+  <p class="shead-label mono">
+    {node && <span class="pipe-anchor" data-pipe-node aria-hidden="true"></span>}
+    <span class="shead-n">{n}</span><span class="shead-sep" aria-hidden="true"></span><span>{label}</span>
+  </p>
+  <div class="shead-main">
+    <H class="shead-title">{title}</H>
+    {text && <p class="shead-text">{text}</p>}
+    <slot />
+  </div>
+</header>

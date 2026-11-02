@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="head"><h1>Поиск</h1></div>
+<form method="get" action="/search" class="inline"><input name="q" value="{{ q }}" placeholder="Компания, ИНН, телефон, email, Telegram, сделка" autofocus style="min-width:320px"><button>Найти</button></form>
+{% if q|length < 2 %}<p class="muted">Введите минимум 2 символа.</p>{% else %}
+<h2>Сделки</h2>
+<div class="tbl"><table>{% for d in res.deals %}<tr><td><a href="/deals/{{ d.id }}">{{ d.title }}</a></td><td>{{ STAGES[d.stage.value] }}</td></tr>{% else %}<tr><td class="muted">Не найдено</td></tr>{% endfor %}</table></div>
+<h2>Клиенты</h2>
+<div class="tbl"><table>{% for c in res.companies %}<tr><td><a href="/companies/{{ c.id }}">{{ c.name }}</a></td><td>{{ c.inn }}</td></tr>{% else %}<tr><td class="muted">Не найдено</td></tr>{% endfor %}</table></div>
+<h2>Контакты</h2>
+<div class="tbl"><table>{% for c in res.contacts %}<tr><td><a href="/companies/{{ c.company_id }}">{{ c.name or '—' }}</a><br><span class="muted small">{{ companies[c.company_id].name if c.company_id in companies }}</span></td><td>{{ c.phone }}</td><td>{{ c.email }}</td><td>{{ c.telegram }}</td></tr>{% else %}<tr><td class="muted">Не найдено</td></tr>{% endfor %}</table></div>
+<h2>Расчёты</h2>
+<div class="tbl"><table>{% for e in res.estimates %}<tr><td><a href="/estimates/{{ e.id }}">{{ e.title }}</a></td><td>{{ e.status }}</td></tr>{% else %}<tr><td class="muted">Не найдено</td></tr>{% endfor %}</table></div>
+{% endif %}
+{% endblock %}

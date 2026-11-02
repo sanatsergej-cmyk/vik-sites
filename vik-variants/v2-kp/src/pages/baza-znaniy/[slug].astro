@@ -1,0 +1,106 @@
+---
+// Статья базы знаний: лонгрид с липким оглавлением, прогрессом чтения, выносками, FAQ и связанными страницами.
+// Разметка Article + FAQPage (дата из updated). Тексты — только из articles (vik-site/src/content).
+import Base from '../../layouts/Base.astro';
+import Faq from '../../components/Faq.astro';
+import Icon from '../../components/Icon.astro';
+import IntakeForm from '../../components/IntakeForm.astro';
+import { articles, knowledgeBase, serviceByPath, directionByPath, cta, brand, form } from '../../content.mjs';
+import { ui } from '../../ui.mjs';
+
+export function getStaticPaths() {
+  return articles.map((a) => ({ params: { slug: a.slug }, props: { a } }));
+}
+const { a } = Astro.props;
+const path = `/baza-znaniy/${a.slug}/`;
+const fmt = (d) => new Date(d).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' });
+const pad = (i: number) => String(i + 1).padStart(2, '0');
+const related = a.related.map((p) => ({ href: p, item: serviceByPath(p) ?? directionByPath(p) })).filter((x) => x.item);
+const others = articles.filter((x) => x.slug !== a.slug).slice(0, 3);
+// Выноска: раздел «ошибок» и последний раздел (что делать дальше) подаются как отдельные панели.
+const isWarn = (h) => /ошибк|замечани/i.test(h);
+// Выноска-цитата: первый содержательный абзац (не вводная фраза перед списком) начиная со второго раздела.
+let pull = { i: -1, j: -1 };
+a.sections.some((x, i) => i > 0 && x.p.some((t, j) => { const ok = t.length > 110 && t.length < 340 && !/:\s*$/.test(t); if (ok) pull = { i, j }; return ok; }));
+const ld = [
+  { '@context': 'https://schema.org', '@type': 'Article', headline: a.h1, description: a.description, datePublished: a.updated, dateModified: a.updated, inLanguage: 'ru', author: { '@type': 'Organization', name: brand?.name ?? 'ВиК' } },
+  { '@context': 'https://schema.org', '@type': 'FAQPage', mainEntity: a.faq.map((f) => ({ '@type': 'Question', name: f.q, acceptedAnswer: { '@type': 'Answer', text: f.a } })) },
+];
+---
+<Base title={a.title} description={a.description} path={path} crumbs={[{ name: ui.home, href: '/' }, { name: knowledgeBase.h1, href: '/baza-znaniy/' }, { name: a.h1, href: path }]}>
+  <Fragment slot="head"><script type="application/ld+json" set:html={JSON.stringify(ld)} /></Fragment>
+  <div class="read-progress" aria-hidden="true"><span data-read-bar></span></div>
+  <article class="kb-article">
+    <header class="page-hero kb-hero">
+      <div class="container">
+        <nav class="crumbs" aria-label={ui.crumbs}>
+          <a href="/">{ui.home}</a><span aria-hidden="true">/</span><a href="/baza-znaniy/">{knowledgeBase.h1}</a>
+        </nav>
+        <p class="kb-meta mono"><span>{a.readMin} {ui.kb.read}</span><span>{ui.kb.updated} <time datetime={a.updated}>{fmt(a.updated)}</time></span></p>
+        <h1>{a.h1}</h1>
+        <p class="kb-standfirst">{a.lead}</p>
+      </div>
+      <span class="hero-line" style="--hl:50%" aria-hidden="true"></span>
+    </header>
+
+    <div class="container kb-grid">
+      <aside class="kb-toc">
+        <details open>
+          <summary class="mono">{ui.kb.toc}</summary>
+          <ol>
+            {a.sections.map((x, i) => <li><a href={`#r${i + 1}`} data-toc-link><span class="mono">{pad(i)}</span>{x.h}</a></li>)}
+            {a.faq.length > 0 && <li><a href="#faq" data-toc-link><span class="mono">{pad(a.sections.length)}</span>{ui.kb.faq}</a></li>}
+          </ol>
+        </details>
+      </aside>
+
+      <div class="kb-body" data-read-body>
+        {a.sections.map((x, i) => {
+          const last = i === a.sections.length - 1;
+          const cls = isWarn(x.h) ? 'kb-sec kb-warn' : last ? 'kb-sec kb-final' : 'kb-sec';
+          return (
+            <section class={cls} id={`r${i + 1}`} data-toc-target>
+              <h2><span class="mono">{pad(i)}</span>{x.h}</h2>
+              {x.p.map((t, j) => (i === pull.i && j === pull.j ? <blockquote class="kb-pull">{t}</blockquote> : <p>{t}</p>))}
+              {x.list?.length > 0 && <ul class="kb-callout">{x.list.map((t) => <li>{t}</li>)}</ul>}
+            </section>
+          );
+        })}
+
+        {a.faq.length > 0 && (
+          <section class="kb-sec kb-faq" id="faq" data-toc-target>
+            <h2><span class="mono">{pad(a.sections.length)}</span>{ui.kb.faq}</h2>
+            <Faq items={a.faq} />
+          </section>
+        )}
+
+        {related.length > 0 && (
+          <section class="kb-related">
+            <h2 class="mono">{ui.kb.related}</h2>
+            <ul>
+              {related.map(({ href, item }) => (
+                <li><a href={href}><Icon name={item.icon} size={22} /><span>{item.label}</span><Icon name="arrow" size={18} /></a></li>
+              ))}
+            </ul>
+          </section>
+        )}
+
+        <div class="kb-cta">
+          <p>{form.text}</p>
+          <a class="btn btn-gold btn-lg" href="#intake">{cta.primary} <Icon name="arrow" size={20} /></a>
+        </div>
+      </div>
+    </div>
+  </article>
+
+  <section class="block kb-more">
+    <div class="container">
+      <h2 class="block-title">{ui.kb.all}</h2>
+      <ul class="kb-mini">
+        {others.map((o) => <li><a href={`/baza-znaniy/${o.slug}/`}><span class="mono">{o.readMin} {ui.kb.read}</span><strong>{o.h1}</strong><Icon name="arrow" size={18} /></a></li>)}
+      </ul>
+    </div>
+  </section>
+
+  <IntakeForm />
+</Base>

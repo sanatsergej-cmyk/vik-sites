@@ -1,0 +1,12 @@
+---
+import Icon from './Icon.astro';
+const { items = [] } = Astro.props;
+---
+<div class="faq">
+  {items.map((f) => (
+    <details>
+      <summary>{f.q}<Icon name="plus" size={24} /></summary>
+      <p>{f.a}</p>
+    </details>
+  ))}
+</div>

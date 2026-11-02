@@ -1,0 +1,23 @@
+---
+import Base from '../layouts/Base.astro';
+import IsoSystem from '../components/IsoSystem.astro';
+import { nav, notFound, directions } from '../content.mjs';
+import { ui } from '../ui.mjs';
+const sysVar = { vodosnabzhenie: 'water', teplosnabzhenie: 'heat', elektrosnabzhenie: 'elec', ventilyatsiya: 'vent', gazosnabzhenie: 'gas' };
+---
+<Base title={notFound.title} description={notFound.h1} path="/404/" noindex>
+  <section class="page-hero">
+    <div class="container">
+      <p class="mono-label">{ui.page.error404}</p>
+      <h1>{notFound.h1}</h1>
+      <p class="lead">{notFound.lead}</p>
+      <p><a class="btn btn-primary" href="/">{notFound.back}</a></p>
+      <ul class="sys-tiles">
+        {directions.map((d) => (
+          <li style={`--c:var(--sys-${sysVar[d.slug]})`}><a href={`/napravleniya/${d.slug}/`}><IsoSystem slug={d.slug} /><strong>{d.label}</strong></a></li>
+        ))}
+      </ul>
+      <div class="chips">{[...nav.services, ...nav.works].map((l) => <a class="chip" href={l.href}>{l.label}</a>)}</div>
+    </div>
+  </section>
+</Base>

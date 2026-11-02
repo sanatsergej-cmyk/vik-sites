@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Поставщики</h1>
+<div class="tbl"><table>
+  <tr><th>Название</th><th>Email</th><th>Категории</th><th>Контакт</th></tr>
+  {% for s in items %}<tr><td>{{ s.name }}</td><td>{{ s.email }}</td><td>{{ s.categories }}</td><td>{{ s.contact }}</td></tr>
+  {% else %}<tr><td colspan="4" class="muted">Поставщиков нет</td></tr>{% endfor %}
+</table></div>
+{% if user.role.value != 'viewer' %}
+<h2>Новый поставщик</h2>
+<form method="post" action="/suppliers" class="card form">
+  <input type="hidden" name="csrf" value="{{ csrf(request) }}">
+  <label>Название<input name="name" required></label>
+  <label>Email для запросов<input name="email" type="email"></label>
+  <label>Категории продукции<input name="categories" placeholder="трубы ППУ, задвижки, насосы"></label>
+  <label>Контакт<input name="contact"></label>
+  <label>Заметки<textarea name="notes" rows="2"></textarea></label>
+  <button>Добавить</button>
+</form>
+{% endif %}
+{% endblock %}

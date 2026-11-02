@@ -1,0 +1,50 @@
+---
+import { nav, cta } from '../content/index.mjs';
+import Icon from './Icon.astro';
+import EmblemVector from './EmblemVector.astro';
+const { path } = Astro.props;
+const cur = (p: string) => (path === p ? 'page' : undefined);
+const inDir = path?.startsWith('/napravleniya/');
+const inSvc = [...nav.services, ...nav.extras].some((l) => l.href === path);
+const inKb = path?.startsWith('/baza-znaniy/');
+const inWork = nav.works.some((l) => l.href === path);
+const ctaHref = ['/dokumenty/', '/privacy/', '/consent/', '/404/'].includes(path) ? '/kontakty/#intake' : '#intake';
+---
+<header class="site-header" data-header>
+  <div class="header-inner">
+    <a class="brand" href="/" aria-label="ВиК — на главную">
+      <EmblemVector class="brand-mark" idp="hd" />
+      <span class="brand-word">ВиК</span>
+    </a>
+    <nav id="main-nav" class="main-nav" aria-label="Основная навигация">
+      <a href="/o-kompanii/" aria-current={cur('/o-kompanii/')} style="--i:0">О компании</a>
+      <div class="has-sub" style="--i:1">
+        <a href="/#napravleniya" class:list={[{ 'is-cur': inDir }]}>Направления</a>
+        <div class="sub">{nav.directions.map((l) => <a href={l.href} aria-current={cur(l.href)}>{l.label}</a>)}</div>
+      </div>
+      <div class="has-sub" style="--i:2">
+        <a href="/#uslugi" class:list={[{ 'is-cur': inSvc }]}>Услуги</a>
+        <div class="sub">
+          {nav.services.map((l) => <a href={l.href} aria-current={cur(l.href)}>{l.label}</a>)}
+          {nav.extras.length > 0 && <span class="sub-sep">Дополнительно</span>}
+          {nav.extras.map((l) => <a href={l.href} aria-current={cur(l.href)}>{l.label}</a>)}
+        </div>
+      </div>
+      <div class="has-sub" style="--i:3">
+        <a href="/#raboty" class:list={[{ 'is-cur': inWork }]}>Работы</a>
+        <div class="sub">{nav.works.map((l) => <a href={l.href} aria-current={cur(l.href)}>{l.label}</a>)}</div>
+      </div>
+      <div class="has-sub" style="--i:4">
+        <a href={nav.knowledge.href} class:list={[{ 'is-cur': inKb }]} aria-current={cur(nav.knowledge.href)}>{nav.knowledge.label}</a>
+        <div class="sub sub--wide">{nav.articles.map((l) => <a href={l.href} aria-current={cur(l.href)}>{l.label}</a>)}</div>
+      </div>
+      <a href="/proekty/" aria-current={cur('/proekty/')} style="--i:5">Проекты</a>
+      <a href="/kontakty/" aria-current={cur('/kontakty/')} style="--i:6">Контакты</a>
+      <a class="btn btn-gold btn-sm nav-cta" href={ctaHref} style="--i:7"><span>{cta.header}</span><span class="btn-ico"><Icon name="arrow" size={14} /></span></a>
+    </nav>
+    <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="main-nav" data-menu-toggle>
+      <span class="sr-only">Меню</span>
+      <span class="bars" aria-hidden="true"><span></span><span></span></span>
+    </button>
+  </div>
+</header>

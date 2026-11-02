@@ -1,0 +1,27 @@
+---
+// Выноска чертёжного типа: точка на объекте, линия-выноска, номер в круге и подпись.
+// На узких экранах подпись скрывается (остаётся номер), текст дублируется в HTML рядом со схемой.
+const { ax, ay, lx, ly, text, idx, href, k, dur = 0.35, wrap = 24, elbow = false } = Astro.props;
+const words = String(text).split(/\s+/);
+const lines = [];
+for (const w of words) {
+  const last = lines[lines.length - 1];
+  if (last && (last + ' ' + w).length <= wrap) lines[lines.length - 1] = last + ' ' + w;
+  else lines.push(w);
+}
+const dy = ly > ay ? -12 : 12;
+const lead = elbow ? `M${ax} ${ay} L${ax} ${ly} L${lx - 12} ${ly}` : `M${ax} ${ay} L${lx} ${ly + dy}`;
+const layer = k !== undefined;
+const Tag = href ? 'a' : 'g';
+---
+<g class:list={['co', { L: layer, fade: layer }]} data-k={layer ? k : undefined} data-d={layer ? dur : undefined}>
+  <path class="co-line" d={lead} />
+  <circle class="co-dot" cx={ax} cy={ay} r="4" />
+  <Tag href={href} class="co-lab">
+    <circle class="co-num" cx={lx} cy={ly} r="12" />
+    <text class="co-i" x={lx} y={ly + 4} text-anchor="middle">{idx}</text>
+    <text class="co-t" x={lx + 20} y={ly + 5 - (lines.length - 1) * 9}>
+      {lines.map((l, i) => <tspan x={lx + 20} dy={i === 0 ? 0 : 18}>{l}</tspan>)}
+    </text>
+  </Tag>
+</g>

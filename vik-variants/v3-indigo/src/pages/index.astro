@@ -1,0 +1,265 @@
+---
+import Base from '../layouts/Base.astro';
+import Emblem from '../components/Emblem.astro';
+import IsoScene from '../components/IsoScene.astro';
+import IsoSystem from '../components/IsoSystem.astro';
+import Photo from '../components/Photo.astro';
+import Intake from '../components/Intake.astro';
+import {
+  home, brand, principles, directions, mainServices, workServices, extraServices, services, stages, riskPoints,
+  manufacturers, energy, mission, companyBlock, cta, clients, photos, photosNote,
+} from '../content.mjs';
+import { ui } from '../ui.mjs';
+
+const showPhotos = import.meta.env.PUBLIC_PHOTOS === '1';
+const showClients = import.meta.env.PUBLIC_CLIENTS_BLOCK === '1';
+const tc = services.find((s) => s.id === 'technical-customer');
+const smr = services.find((s) => s.id === 'smr');
+const pad = (i) => String(i + 1).padStart(2, '0');
+const sysVar = { vodosnabzhenie: 'water', teplosnabzhenie: 'heat', elektrosnabzhenie: 'elec', ventilyatsiya: 'vent', gazosnabzhenie: 'gas' };
+---
+<Base title={home.title} description={home.description} path="/" trunk>
+  <!-- Первый экран -->
+  <section class="hero" data-node="00">
+    <div class="hero-bg" aria-hidden="true"></div>
+    <div class="container hero-inner">
+      <div class="hero-copy">
+        <p class="mono-label hero-region">{brand.region}</p>
+        <div class="hero-brand">
+          <span class="wordmark">{brand.name}</span>
+          <span class="tagline">{brand.tagline}</span>
+        </div>
+        <h1>{home.h1}</h1>
+        <p class="lead">{home.lead}</p>
+        <div class="cta-row">
+          <a class="btn btn-primary" href="#intake">{cta.primary}<span aria-hidden="true">→</span></a>
+          <a class="btn btn-ghost" href="#intake">{cta.secondary}</a>
+        </div>
+        <p class="eta"><span class="eta-dot" aria-hidden="true"></span>{ui.eta} {brand.eta}</p>
+      </div>
+
+      <div class="hero-art">
+        <div class="hero-stage">
+        <svg class="hero-frame" viewBox="0 0 520 520" aria-hidden="true">
+          <circle cx="260" cy="268" r="212" class="hf-c" />
+          <circle cx="260" cy="268" r="150" class="hf-c hf-c2" />
+          <path class="hf-axis" d="M260 20 V510 M14 268 H506" />
+          <path class="hf-dim" d="M58 480 H462 M58 470 V490 M462 470 V490" />
+          <path class="hf-dim" d="M486 90 V446 M476 90 H496 M476 446 H496" />
+          <path class="hf-tick" d="M20 20 h24 M20 20 v24 M500 20 h-24 M500 20 v24 M20 500 h24 M20 500 v-24 M500 500 h-24 M500 500 v-24" />
+          <text x="66" y="40" class="hf-t">A</text>
+          <text x="448" y="40" class="hf-t">B</text>
+          <text x="254" y="500" class="hf-t">C</text>
+        </svg>
+        <div class="hero-emblem"><Emblem size={340} draw /></div>
+        </div>
+        <ol class="principles">
+          {principles.map((x, i) => <li class="rv" style={`--i:${i}`}><span class="mono">{pad(i)}</span>{x}</li>)}
+        </ol>
+      </div>
+    </div>
+
+    <div class="container">
+      <ul class="sys-tiles" aria-label={ui.nav.directions}>
+        {directions.map((d, i) => (
+          <li class="rv" style={`--i:${i};--c:var(--sys-${sysVar[d.slug]})`}>
+            <a href={`/napravleniya/${d.slug}/`}>
+              <IsoSystem slug={d.slug} />
+              <span class="mono">{pad(i)}</span>
+              <strong>{d.label}</strong>
+            </a>
+          </li>
+        ))}
+      </ul>
+    </div>
+  </section>
+
+  <!-- Изометрический разрез: сети собираются при прокрутке + маршрут проекта -->
+  <IsoScene />
+
+  <!-- Услуги по стадиям + основные виды работ -->
+  <section class="section" id="uslugi" data-node="02">
+    <div class="container svc-grid">
+      <div class="rv">
+        <p class="mono-label">{ui.servicesMain}</p>
+        <h2>{home.services.title}</h2>
+        <p class="muted measure">{home.services.text}</p>
+        <div class="spec">
+          {mainServices.map((s, i) => (
+            <a class="spec-row" href={`/uslugi/${s.slug}/`}>
+              <span class="mono spec-n">{pad(i)}</span>
+              <span class="spec-body"><strong>{s.label}</strong><small>{s.cardLead}</small></span>
+              <span class="spec-arr" aria-hidden="true">→</span>
+            </a>
+          ))}
+        </div>
+      </div>
+      <div class="rv" id="raboty">
+        <p class="mono-label">{ui.servicesWorks}</p>
+        <h2>{home.works.title}</h2>
+        <p class="muted measure">{home.works.text}</p>
+        <div class="spec spec-works">
+          {workServices.map((s, i) => (
+            <a class="spec-row" href={`/uslugi/${s.slug}/`}>
+              <span class="mono spec-n">W{i + 1}</span>
+              <span class="spec-body"><strong>{s.label}</strong><small>{s.cardLead}</small></span>
+              <span class="spec-arr" aria-hidden="true">→</span>
+            </a>
+          ))}
+        </div>
+        <p class="mono-label mt" id="soprovozhdenie">{ui.groups.extra.label}</p>
+        <div class="spec spec-extra">
+          {extraServices.map((s, i) => (
+            <a class="spec-row" href={`/uslugi/${s.slug}/`}>
+              <span class="mono spec-n">E{i + 1}</span>
+              <span class="spec-body"><strong>{s.label}</strong><small>{s.cardLead}</small></span>
+              <span class="spec-arr" aria-hidden="true">→</span>
+            </a>
+          ))}
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Технический заказчик: что входит -->
+  <section class="section tc" id="tekhzakazchik" data-node="03">
+    <div class="container">
+      <div class="section-head rv">
+        <p class="mono-label">{tc.eyebrow}</p>
+        <h2>{home.techCustomer?.title ?? `${tc.label}: ${ui.tc.suffix}`}</h2>
+        <p class="muted measure">{tc.lead}</p>
+        {home.techCustomer?.text && <p class="muted measure">{home.techCustomer.text}</p>}
+      </div>
+      <div class="tc-sheet">
+        {tc.scopeGroups.map((g, gi) => (
+          <div class="tc-col rv" style={`--i:${gi}`}>
+            <h3><span class="mono">{gi + 1}</span>{g.title}</h3>
+            <ul>{g.items.map((x, ii) => <li><span class="mono">{gi + 1}.{ii + 1}</span>{x}</li>)}</ul>
+          </div>
+        ))}
+      </div>
+      <p class="rv"><a class="link-arrow" href={`/uslugi/${tc.slug}/`}>{home.techCustomer?.more ?? `${ui.openService}: ${tc.label}`}<span aria-hidden="true">→</span></a></p>
+    </div>
+  </section>
+
+  <!-- СМР по системам -->
+  <section class="section smr" id="smr" data-node="04">
+    <div class="container">
+      <div class="section-head rv">
+        <p class="mono-label">{smr.label}</p>
+        <h2>{home.smr?.title ?? ui.smr.title}</h2>
+        <p class="muted measure">{home.smr?.text ?? smr.cardLead}</p>
+      </div>
+      <div class="smr-list">
+        {directions.map((d, i) => {
+          const ph = showPhotos ? photos.filter((x) => x.dir === d.slug).slice(0, 2) : [];
+          return (
+            <article class="smr-row rv" style={`--c:var(--sys-${sysVar[d.slug]})`}>
+              <div class="smr-meta">
+                <span class="mono smr-n">{pad(i)}</span>
+                {ph.length > 0 && <IsoSystem slug={d.slug} cls="smr-icon" />}
+                <h3><a href={`/napravleniya/${d.slug}/`}>{d.label}</a></h3>
+                <p class="muted">{d.cardLead}</p>
+                <a class="link-arrow" href={`/napravleniya/${d.slug}/`}>{ui.openDirection}<span aria-hidden="true">→</span></a>
+              </div>
+              <div class="smr-scope">
+                {d.scopeGroups.map((g) => (
+                  <div>
+                    <p class="mono-label">{g.title}</p>
+                    <ul class="tick-list">{g.items.map((x) => <li>{x}</li>)}</ul>
+                  </div>
+                ))}
+              </div>
+              <div class:list={['smr-visual', { 'has-ph': ph.length > 0 }]}>
+                {ph.length > 0 ? ph.map((x) => <Photo ph={x} sizes="(max-width: 700px) 44vw, 200px" />) : <div class="smr-scheme"><IsoSystem slug={d.slug} /></div>}
+              </div>
+            </article>
+          );
+        })}
+      </div>
+      {showPhotos && <p class="small muted note" data-placeholder>{photosNote}</p>}
+    </div>
+  </section>
+
+  <!-- Что снижает риск -->
+  <section class="section" id="risk" data-node="05">
+    <div class="container risk-grid">
+      <div class="section-head rv">
+        <h2>{home.risk.title}</h2>
+        <p class="muted measure">{home.risk.text}</p>
+      </div>
+      <div class="risk-sheet">
+        {riskPoints.map((r, i) => (
+          <div class="risk-cell rv" style={`--i:${i}`}>
+            <span class="mono">R{i + 1}</span>
+            <h3>{r.t}</h3>
+            <p class="muted">{r.d}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <!-- Для кого -->
+  <section class="section" id="dlya-kogo" data-node="06">
+    <div class="container">
+      <div class="section-head rv"><h2>{home.audiences.title}</h2></div>
+      <div class="aud">
+        {home.audiences.items.map((a, i) => (
+          <div class="aud-col rv" style={`--i:${i}`}>
+            <span class="mono">{pad(i)}</span>
+            <h3>{a.t}</h3>
+            <p class="muted">{a.d}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <!-- С кем работаем -->
+  {showClients && (
+    <section class="section" id="zakazchiki" data-node="07">
+      <div class="container">
+        <div class="section-head rv"><h2>{clients.title}</h2><p class="muted measure">{clients.text}</p></div>
+        <div class="clients">
+          {clients.groups.map((g) => (
+            <div class="client-group rv">
+              <h3 class="mono-label">{g.t}</h3>
+              <ul>{g.items.map((x) => <li>{x}</li>)}</ul>
+            </div>
+          ))}
+        </div>
+        <p class="small muted note" data-placeholder>{clients.note}</p>
+      </div>
+    </section>
+  )}
+
+  <!-- Энергоэффективность, производители, миссия -->
+  <section class="section" id="principy" data-node="08">
+    <div class="container two">
+      <div class="rv"><h2>{energy.title}</h2><p class="muted">{energy.text}</p></div>
+      <div class="rv"><h2>{manufacturers.title}</h2><p class="muted">{manufacturers.text}</p></div>
+    </div>
+    <div class="container">
+      <div class="mission rv">
+        <p class="mission-badge mono">{home.missionNote ?? ui.mission.badge}</p>
+        <h2>{mission.title}</h2>
+        <p>{mission.text}</p>
+      </div>
+      <div class="statusbox rv">
+        <h3>{companyBlock.title}</h3>
+        <p class="muted">{companyBlock.text}</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Стадия обращения -->
+  <section class="section stage-sec">
+    <div class="container">
+      <div class="section-head rv"><h2>{home.stage.title}</h2><p class="muted measure">{home.stage.text}</p></div>
+      <div class="chips rv">{stages.map((s) => <a class="chip" href={`/?stage=${s.id}#intake`}>{s.label}</a>)}</div>
+    </div>
+  </section>
+
+  <Intake node="09" />
+</Base>

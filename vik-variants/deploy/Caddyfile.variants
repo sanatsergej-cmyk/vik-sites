@@ -1,0 +1,40 @@
+# Показ трёх вариантов сайта Виталию на поддоменах. Всё закрыто от индексации.
+# DNS: A-записи gold, kp, indigo (или одна *.vikmsk.ru) на IP сервера. SSL Caddy выпустит сам.
+# Подключение: вставить этот файл в основной Caddyfile рядом с блоком {$SITE_DOMAIN} из vik-site/deploy/Caddyfile.
+
+(stand) {
+	encode zstd gzip
+	header {
+		X-Robots-Tag "noindex, nofollow, noarchive"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		-Server
+	}
+	handle /api/public/* {
+		reverse_proxy 127.0.0.1:8000
+	}
+	handle {
+		@assets path /_astro/*
+		header @assets Cache-Control "public, max-age=31536000, immutable"
+		file_server
+	}
+	handle_errors {
+		rewrite * /404.html
+		file_server
+	}
+}
+
+gold.{$SITE_DOMAIN} {
+	root * /srv/vik-v1
+	import stand
+}
+
+kp.{$SITE_DOMAIN} {
+	root * /srv/vik-v2
+	import stand
+}
+
+indigo.{$SITE_DOMAIN} {
+	root * /srv/vik-v3
+	import stand
+}

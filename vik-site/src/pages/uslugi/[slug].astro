@@ -1,0 +1,325 @@
+---
+import Base from '../../layouts/Base.astro';
+import Icon from '../../components/Icon.astro';
+import Pic from '../../components/Pic.astro';
+import IntakeForm from '../../components/IntakeForm.astro';
+import ServiceArt from '../../components/ServiceArt.astro';
+import { directions, services, serviceByPath, articles, cta } from '../../content/index.mjs';
+import { photos } from '../../content/photos.mjs';
+import { dirVisual, photosOn } from '../../data/visual';
+
+export function getStaticPaths() {
+  return services.map((s) => ({ params: { slug: s.slug }, props: { s } }));
+}
+const { s } = Astro.props;
+const path = `/uslugi/${s.slug}/`;
+const related = s.related.map((r: string) => serviceByPath(r)).filter(Boolean);
+const reads = articles.filter((a: any) => a.related.includes(path)).slice(0, 2);
+const pad = (i: number) => String(i + 1).padStart(2, '0');
+const groups: Record<string, { label: string; href: string }> = {
+  main: { label: 'Услуги по стадиям', href: '/#uslugi' },
+  work: { label: 'Основные работы', href: '/#raboty' },
+  extra: { label: 'Дополнительные услуги', href: '/#uslugi-dop' },
+};
+const g = groups[s.group] ?? groups.main;
+
+// Композиция страницы по смыслу услуги (волна 2). hero: 'art' — схема в шапке, ситуации отдельной лентой;
+// 'sit' — ситуации в шапке. scope: bento | table | stack. steps: strip | split | timeline | quest | cycle.
+type Layout = { hero: 'art' | 'sit'; scope: 'bento' | 'table' | 'stack'; steps: 'strip' | 'split' | 'timeline' | 'quest' | 'cycle' };
+const layouts: Record<string, Layout> = {
+  'tekhnicheskiy-zakazchik': { hero: 'art', scope: 'table', steps: 'strip' },
+  'proektirovanie-i-soglasovaniya': { hero: 'art', scope: 'bento', steps: 'strip' },
+  'soglasovanie-rso': { hero: 'art', scope: 'bento', steps: 'strip' },
+  smr: { hero: 'art', scope: 'bento', steps: 'timeline' },
+  'dokumentatsiya-i-sdacha': { hero: 'art', scope: 'stack', steps: 'strip' },
+  'tekhprisoedinenie-i-tu': { hero: 'sit', scope: 'bento', steps: 'quest' },
+  'vynos-setey': { hero: 'art', scope: 'bento', steps: 'strip' },
+  ekspertiza: { hero: 'sit', scope: 'bento', steps: 'cycle' },
+};
+const L: Layout = layouts[s.slug] ?? { hero: 'sit', scope: 'bento', steps: 'split' };
+const artCaption: Record<string, string> = {
+  'tekhnicheskiy-zakazchik': 'Схема ответственности',
+  'proektirovanie-i-soglasovaniya': 'Стадии и маршрут согласований',
+  'soglasovanie-rso': 'Организации и путь документа',
+  smr: 'Работы на площадке',
+  'dokumentatsiya-i-sdacha': 'Комплект документов',
+  'vynos-setey': 'До и после',
+};
+const shots = photosOn ? photos.filter((p: any) => !p.ai) : [];
+---
+<Base
+  title={s.title}
+  description={s.description}
+  path={path}
+  crumbs={[{ name: 'Главная', href: '/' }, { name: s.label, href: path }]}
+>
+  <div class:list={['svc-page', `svc--${s.slug}`, `svc-g--${s.group}`]}>
+    <section class="page-hero">
+      <div class="container ph-grid">
+        <div class="ph-copy">
+          <p class="crumbs"><a href="/">Главная</a><span class="sep"></span><a href={g.href}>{g.label}</a><span class="sep"></span>{s.label}</p>
+          <span class="ph-icon"><Icon name={s.icon} size={30} /></span>
+          <p class="eyebrow">{s.group === 'extra' ? g.label : s.eyebrow}</p>
+          <h1>{s.h1}</h1>
+          <p class="lead">{s.lead}</p>
+          <a class="btn btn-gold" href={`?service=${s.id}#intake`}><span>{cta.primary}</span><span class="btn-ico"><Icon name="arrow" size={16} /></span></a>
+        </div>
+        {L.hero === 'art' ? (
+          <div class="ph-art">
+            <div class="bezel"><div class="bezel-core"><ServiceArt slug={s.slug} /></div></div>
+            <p class="ph-art-caption"><span>{artCaption[s.slug] ?? 'Схема'}</span><span>{s.label}</span></p>
+          </div>
+        ) : (
+          <div class="ph-side bezel">
+            <div class="bezel-core">
+              <p class="eyebrow">Когда к нам обращаются</p>
+              <ol class="sit-list">{s.situations.map((x: string, i: number) => <li><span>{pad(i)}</span>{x}</li>)}</ol>
+            </div>
+          </div>
+        )}
+      </div>
+    </section>
+
+    {L.hero === 'art' && (
+      <section class="section sit-sec">
+        <div class="container">
+          <div class="section-head" data-reveal><p class="eyebrow">Ситуации</p><h2>Когда к нам обращаются</h2></div>
+          <ol class="sit-strip" style={`--c:${s.situations.length === 6 ? 3 : Math.min(5, s.situations.length)}`}>
+            {s.situations.map((x: string, i: number) => <li data-reveal style={`--i:${i}`}><span class="ss-n">{pad(i)}</span><p>{x}</p></li>)}
+          </ol>
+        </div>
+      </section>
+    )}
+
+    <section class="section">
+      <div class="container">
+        {L.scope === 'table' ? (
+          <>
+            <div class="section-head split" data-reveal>
+              <div><p class="eyebrow">Состав</p><h2>Кто за что отвечает</h2></div>
+              <p>{s.boundary}</p>
+            </div>
+            <div class="table-wrap" data-reveal>
+              <table class="resp-table">
+                <thead><tr><th scope="col">Блок функций</th><th scope="col">Что берёт на себя ВиК</th></tr></thead>
+                <tbody>
+                  {s.scopeGroups.map((x: { title: string; items: string[] }, i: number) => (
+                    <tr><th scope="row"><span class="rt-n">{pad(i)}</span>{x.title}</th><td><ul class="ticks">{x.items.map((t) => <li><Icon name="check" size={15} />{t}</li>)}</ul></td></tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </>
+        ) : L.scope === 'stack' ? (
+          <div class="stack-wrap">
+            <div class="section-head" data-reveal><p class="eyebrow">Состав</p><h2>Что входит в комплект</h2><p>Раскройте раздел, чтобы увидеть состав.</p></div>
+            <div class="doc-stack">
+              {s.scopeGroups.map((x: { title: string; items: string[] }, i: number) => (
+                <details class="doc-sheet" open={i === 0} data-reveal style={`--i:${i}`}>
+                  <summary><span class="ds-n">{pad(i)}</span><span class="ds-t">{x.title}</span><span class="acc-c">{x.items.length}</span><span class="acc-plus" aria-hidden="true"></span></summary>
+                  <ul class="ticks">{x.items.map((t) => <li><Icon name="check" size={15} />{t}</li>)}</ul>
+                </details>
+              ))}
+            </div>
+          </div>
+        ) : (
+          <>
+            <div class="section-head" data-reveal><p class="eyebrow">Состав</p><h2>Что входит</h2></div>
+            <div class:list={['scope-grid', `scope-grid--${s.scopeGroups.length}`]}>
+              {s.scopeGroups.map((x: { title: string; items: string[] }, i: number) => (
+                <div class="bezel scope" data-reveal style={`--i:${i}`}>
+                  <div class="bezel-core">
+                    <p class="scope-n">{pad(i)}</p>
+                    <h3>{x.title}</h3>
+                    <ul class="ticks">{x.items.map((t) => <li><Icon name="check" size={16} />{t}</li>)}</ul>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container two">
+        <div data-reveal>
+          <p class="eyebrow">Исходные данные</p>
+          <h2>Что нужно для первичной оценки</h2>
+          <ul class="list">{s.inputs.map((x: string) => <li>{x}</li>)}</ul>
+          <p class="muted small" style="margin-top:14px">Если документов пока нет, достаточно описания задачи.</p>
+        </div>
+        <div data-reveal style="--i:1">
+          <p class="eyebrow">Проверка</p>
+          <h2>Что проверяем в первую очередь</h2>
+          <ul class="list">{s.check.map((x: string) => <li>{x}</li>)}</ul>
+        </div>
+      </div>
+    </section>
+
+    {(s.extra ?? []).map((x: { title: string; items: string[]; note?: string }) => (
+      <section class="section">
+        <div class="container">
+          <div class="bezel" data-reveal>
+            <div class="bezel-core extra">
+              <div><p class="eyebrow">Справка</p><h2>{x.title}</h2>{x.note && <p class="muted">{x.note}</p>}</div>
+              <ul class="list">{x.items.map((i) => <li>{i}</li>)}</ul>
+            </div>
+          </div>
+        </div>
+      </section>
+    ))}
+
+    <section class="section">
+      <div class="container">
+        {L.steps === 'split' ? (
+          <div class="split-steps">
+            <div class="ss-visual">
+              <div class="bezel"><div class="bezel-core"><ServiceArt slug={s.slug} /></div></div>
+              <p class="ph-art-caption"><span>Схема работ</span><span>{s.label}</span></p>
+            </div>
+            <div>
+              <div class="section-head" data-reveal><p class="eyebrow">Процесс</p><h2>Как проходит работа</h2></div>
+              <ol class="route-strip">
+                {s.steps.map((r: { t: string; d: string }, i: number) => (
+                  <li data-step><span class="rs-node"><span>{pad(i)}</span></span><div class="rs-body"><strong>{r.t}</strong><p>{r.d}</p></div></li>
+                ))}
+              </ol>
+            </div>
+          </div>
+        ) : L.steps === 'timeline' ? (
+          <>
+            <div class="section-head split" data-reveal><div><p class="eyebrow">Процесс</p><h2>Работы на площадке</h2></div><p>{s.cardLead}</p></div>
+            <ol class="timeline">
+              {s.steps.map((r: { t: string; d: string }, i: number) => {
+                const ph = shots.length ? shots[i % shots.length] : null;
+                return (
+                  <li data-step class:list={[{ 'tl-r': i % 2 }]}>
+                    <span class="rs-node"><span>{pad(i)}</span></span>
+                    <div class="tl-card">
+                      {ph && <div class="tl-img"><Pic base={ph.src.replace(/\.jpg$/, '')} alt={ph.alt} width={750} height={1000} small sizes="(max-width: 760px) 80vw, 260px" /><span class="media-label">{ph.cap}</span></div>}
+                      <div class="rs-body"><strong>{r.t}</strong><p>{r.d}</p></div>
+                    </div>
+                  </li>
+                );
+              })}
+            </ol>
+          </>
+        ) : L.steps === 'quest' ? (
+          <>
+            <div class="quest-head">
+              <div class="section-head" data-reveal><p class="eyebrow">Маршрут заявки</p><h2>От запроса ТУ до договора</h2><p>{s.cardLead}</p></div>
+              <div class="quest-art" data-reveal><ServiceArt slug={s.slug} /></div>
+            </div>
+            <ol class="quest">
+              {s.steps.map((r: { t: string; d: string }, i: number) => (
+                <li data-reveal style={`--i:${i}`}>
+                  <span class="q-flag"><Icon name="route" size={18} /></span>
+                  <span class="q-n">Шаг {i + 1}</span>
+                  <strong>{r.t}</strong>
+                  <p>{r.d}</p>
+                </li>
+              ))}
+            </ol>
+          </>
+        ) : L.steps === 'cycle' ? (
+          <div class="cycle-wrap">
+            <div class="cycle-art" data-reveal><div class="bezel"><div class="bezel-core"><ServiceArt slug={s.slug} /></div></div><p class="ph-art-caption"><span>Цикл замечаний</span><span>{s.label}</span></p></div>
+            <div>
+              <div class="section-head" data-reveal><p class="eyebrow">Процесс</p><h2>Как проходит работа</h2></div>
+              <ol class="cycle-list">
+                {s.steps.map((r: { t: string; d: string }, i: number) => (
+                  <li data-reveal style={`--i:${i}`}><span class="cy-n">{pad(i)}</span><div><strong>{r.t}</strong><p>{r.d}</p></div></li>
+                ))}
+              </ol>
+            </div>
+          </div>
+        ) : (
+          <>
+            <div class="section-head" data-reveal><p class="eyebrow">Процесс</p><h2>Как проходит работа</h2></div>
+            <ol class:list={['steps-h', { 'cols-3': s.steps.length === 3 }]}>
+              {s.steps.map((r: { t: string; d: string }, i: number) => (
+                <li data-step><span class="rs-node"><span>{pad(i)}</span></span><div class="rs-body"><strong>{r.t}</strong><p>{r.d}</p></div></li>
+              ))}
+            </ol>
+          </>
+        )}
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container two">
+        <div class="bezel panel" data-reveal>
+          <div class="bezel-core">
+            <p class="eyebrow">Результат</p>
+            <h2>Что вы получите</h2>
+            <ul class="ticks">{s.outputs.map((x: string) => <li><Icon name="check" size={16} />{x}</li>)}</ul>
+          </div>
+        </div>
+        <div class="bezel panel" data-reveal style="--i:1">
+          <div class="bezel-core">
+            <p class="eyebrow">Оценка</p>
+            <h2>От чего зависят сроки и стоимость</h2>
+            <ul class="ticks">{s.factors.map((x: string) => <li><Icon name="plus" size={16} />{x}</li>)}</ul>
+          </div>
+        </div>
+      </div>
+      {L.scope !== 'table' && (
+        <div class="container" style="margin-top:28px">
+          <p class="boundary" data-reveal><strong>Границы ответственности.</strong> {s.boundary}</p>
+        </div>
+      )}
+    </section>
+
+    <section class="section">
+      <div class="container">
+        <div class="section-head split" data-reveal>
+          <div><p class="eyebrow">Системы</p><h2>По какой системе нужна работа</h2></div>
+          <p>Откройте страницу направления: услуга сохранится в заявке.</p>
+        </div>
+        <nav class="sys-switch" aria-label="Направления">
+          {directions.map((d) => (
+            <a class="sys-chip" href={`/napravleniya/${d.slug}/?service=${s.id}`} style={`--hue:${dirVisual[d.slug].hue}`}><Icon name={d.icon} size={20} />{d.label}</a>
+          ))}
+        </nav>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container">
+        <div class="section-head" data-reveal><p class="eyebrow">Дальше по маршруту</p><h2>Связанные услуги</h2></div>
+        <div class="rel-list">
+          {related.map((o: any) => (
+            <a class="rel-row" href={`/uslugi/${o.slug}/`} data-reveal>
+              <Icon name={o.icon} size={26} />
+              <span class="rr-t">{o.label}</span>
+              <span class="rr-l">{o.cardLead}</span>
+              <span class="ix-go"><Icon name="arrow" size={16} /></span>
+            </a>
+          ))}
+        </div>
+        {reads.length > 0 && (
+          <div class="reads">
+            <p class="eyebrow">База знаний</p>
+            <div class="reads-grid">
+              {reads.map((a: any) => (
+                <a class="read-card" href={`/baza-znaniy/${a.slug}/`}><span class="rc-meta">{a.readMin} мин чтения</span><strong>{a.h1}</strong><span class="link-go">Читать <span class="btn-ico"><Icon name="arrow" size={14} /></span></span></a>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container two faq-wrap">
+        <div data-reveal><p class="eyebrow">Вопросы</p><h2>Вопросы по этой услуге</h2></div>
+        <div class="faq">
+          {s.faq.map((f: { q: string; a: string }) => <details class="q"><summary>{f.q}</summary><p>{f.a}</p></details>)}
+        </div>
+      </div>
+    </section>
+
+    <IntakeForm />
+  </div>
+</Base>

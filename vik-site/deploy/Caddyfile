@@ -1,0 +1,43 @@
+# Закрытый стенд сайта ВиК на VPS. Роботам запрещено индексировать (meta, robots.txt и заголовок ниже).
+# Подставьте домен: export SITE_DOMAIN=example.ru (или впишите вместо {$SITE_DOMAIN}).
+# SSL выпускается автоматически, когда DNS-запись A домена указывает на IP сервера.
+
+{$SITE_DOMAIN} {
+	encode zstd gzip
+	root * /srv/vik-site
+
+	header {
+		X-Robots-Tag "noindex, nofollow, noarchive"
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "SAMEORIGIN"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		-Server
+	}
+
+	# Необязательно: закрыть стенд паролем. Хэш создаёт сам владелец: caddy hash-password
+	# basic_auth {
+	# 	team ВСТАВЬТЕ_ХЭШ_ПАРОЛЯ
+	# }
+
+	# Публичный приём заявок и консультанта уходит в CRM (контейнер слушает только на localhost)
+	handle /api/public/* {
+		reverse_proxy 127.0.0.1:8000
+	}
+
+	handle {
+		@assets path /_astro/*
+		header @assets Cache-Control "public, max-age=31536000, immutable"
+		file_server
+	}
+
+	handle_errors {
+		rewrite * /404.html
+		file_server
+	}
+}
+
+# CRM на отдельном адресе (вход по логину и паролю, закрыт от индексации самим приложением)
+app.{$SITE_DOMAIN} {
+	encode zstd gzip
+	reverse_proxy 127.0.0.1:8000
+}

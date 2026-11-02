@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <title>{% block title %}ВиК CRM{% endblock %}</title>
+  <script>
+    (function () {
+      try {
+        var t = localStorage.getItem('vik-theme') || (matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+        document.documentElement.setAttribute('data-theme', t);
+      } catch (e) { document.documentElement.setAttribute('data-theme', 'dark'); }
+    })();
+  </script>
+  <link rel="stylesheet" href="/static/app.css">
+</head>
+<body class="{{ 'app' if user else 'guest' }}">
+{% if user %}
+<aside class="side">
+  <a class="logo" href="/">ВиК <span>CRM</span></a>
+  <nav>
+    <a href="/" class="{{ 'on' if request.url.path == '/' }}">Дашборд</a>
+    <a href="/deals" class="{{ 'on' if request.url.path.startswith('/deals') or request.url.path.startswith('/estimates') }}">Сделки</a>
+    <a href="/tasks" class="{{ 'on' if request.url.path.startswith('/tasks') }}">Задачи</a>
+    <a href="/companies" class="{{ 'on' if request.url.path.startswith('/companies') }}">Клиенты</a>
+    <a href="/suppliers" class="{{ 'on' if request.url.path.startswith('/suppliers') }}">Поставщики</a>
+    {% if user.role.value == 'admin' %}<a href="/admin/">Админка</a>{% endif %}
+  </nav>
+  <div class="side-foot">
+    <button type="button" class="theme" data-theme-toggle aria-label="Сменить тему"><span class="sun">День</span><span class="moon">Ночь</span></button>
+    <form method="post" action="/logout">
+      <input type="hidden" name="csrf" value="{{ csrf(request) }}">
+      <span class="muted small">{{ user.name or user.email }}</span>
+      <button class="link">Выйти</button>
+    </form>
+  </div>
+</aside>
+{% endif %}
+<main class="main">
+{% if user %}
+<form class="topbar" method="get" action="/search" role="search">
+  <input id="gsearch" name="q" placeholder="Поиск: компания, телефон, email, сделка   ( / )" autocomplete="off">
+</form>
+{% endif %}
+{% block content %}{% endblock %}</main>
+<script>
+  document.addEventListener('keydown', function (e) {
+    var t = e.target.tagName;
+    if (e.key === '/' && t !== 'INPUT' && t !== 'TEXTAREA' && t !== 'SELECT') { var g = document.getElementById('gsearch'); if (g) { e.preventDefault(); g.focus(); } }
+    if (e.key === 'Escape') { var a = document.activeElement; if (a && a.blur) a.blur(); }
+  });
+  document.querySelectorAll('[data-theme-toggle]').forEach(function (b) {
+    b.addEventListener('click', function () {
+      var next = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', next);
+      try { localStorage.setItem('vik-theme', next); } catch (e) {}
+    });
+  });
+</script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

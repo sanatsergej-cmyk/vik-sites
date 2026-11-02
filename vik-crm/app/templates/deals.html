@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% block content %}
+{% set w = user.role.value != 'viewer' %}
+<div class="head">
+  <div><h1>Сделки</h1></div>
+  <div class="head-actions">
+    <a class="chip {{ 'on' if view == 'board' }}" href="/deals?owner={{ owner }}&prio={{ prio }}">Доска</a>
+    <a class="chip {{ 'on' if view == 'list' and not stage }}" href="/deals?view=list&owner={{ owner }}&prio={{ prio }}">Список</a>
+    <a class="chip" href="/deals.csv">Выгрузить CSV</a>
+    {% if w %}<a class="btn" href="/quick">+ Быстро добавить</a>{% endif %}
+  </div>
+</div>
+<form method="get" action="/deals" class="inline filters">
+  <input type="hidden" name="view" value="{{ view }}">
+  <select name="owner" onchange="this.form.submit()"><option value="">Все ответственные</option>{% for o in owners %}<option value="{{ o.id }}" {{ 'selected' if owner == o.id|string }}>{{ o.name or o.email }}</option>{% endfor %}</select>
+  <label class="check"><input type="checkbox" name="prio" value="1" {{ 'checked' if prio == '1' }} onchange="this.form.submit()"> только приоритетные работы</label>
+</form>
+{% if stage %}<p>Стадия: <strong>{{ STAGES[stage] }}</strong> · <a href="/deals">сбросить</a></p>{% endif %}
+
+{% if view == 'board' %}
+<div class="board" data-csrf="{{ csrf(request) }}" data-writable="{{ '1' if w else '0' }}">
+  {% for key, label in STAGES.items() %}
+  <div class="col" data-stage="{{ key }}">
+    <h3><span>{{ label }}</span><span>{{ columns[key]|length }}</span></h3>
+    <div class="colsum">{{ sums[key]|money0 if sums[key] else '' }}</div>
+    {% for deal, company in columns[key] %}
+    {% set nt = next_task.get(deal.id) %}
+    <a class="dcard {{ 'prio' if is_priority(deal.service) }}" href="/deals/{{ deal.id }}" data-id="{{ deal.id }}" draggable="{{ 'true' if w else 'false' }}">
+      <strong>{{ deal.title }}</strong>
+      <small>{{ company.name }}</small>
+      <small>{{ deal.service|service_label if deal.service else 'вид работ не указан' }}{% if deal.amount_expected %} · {{ deal.amount_expected|money0 }}{% endif %}</small>
+      {% if key not in ('won', 'lost') %}
+      <small class="next">
+        {% if nt %}{% if nt.due_at < now %}<span class="badge late">просрочено</span>{% endif %}{{ nt.title[:46] }}
+        {% else %}<span class="badge late">нет следующего шага</span>{% endif %}
+      </small>
+      {% endif %}
+    </a>
+    {% endfor %}
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<div class="tbl"><table>
+  <tr><th>Сделка</th><th>Клиент</th><th>Стадия</th><th>Вид работ</th><th>Сумма</th><th>Обновлена</th></tr>
+  {% for deal, company in items %}
+  <tr><td><a href="/deals/{{ deal.id }}">{{ deal.title }}</a></td><td><a href="/companies/{{ company.id }}">{{ company.name }}</a></td><td>{{ STAGES[deal.stage.value] }}</td><td>{{ deal.service|service_label if deal.service else '—' }}{% if is_priority(deal.service) %}<span class="badge">приоритет</span>{% endif %}</td><td>{{ deal.amount_expected|money0 if deal.amount_expected else '' }}</td><td>{{ deal.updated_at|dt }}</td></tr>
+  {% else %}<tr><td colspan="6" class="muted">Сделок нет</td></tr>{% endfor %}
+</table></div>
+{% endif %}
+{% endblock %}
+{% block scripts %}
+{% if view == 'board' %}
+<script>
+(function () {
+  var board = document.querySelector('.board');
+  if (!board || board.dataset.writable !== '1') return;
+  var dragged = null;
+  board.addEventListener('dragstart', function (e) { var c = e.target.closest('.dcard'); if (c) { dragged = c; e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', c.dataset.id); } });
+  board.querySelectorAll('.col').forEach(function (col) {
+    col.addEventListener('dragover', function (e) { e.preventDefault(); col.classList.add('over'); });
+    col.addEventListener('dragleave', function () { col.classList.remove('over'); });
+    col.addEventListener('drop', function (e) {
+      e.preventDefault(); col.classList.remove('over');
+      if (!dragged) return;
+      var fd = new FormData(); fd.append('csrf', board.dataset.csrf); fd.append('stage', col.dataset.stage);
+      var card = dragged; dragged = null;
+      fetch('/deals/' + card.dataset.id + '/move', { method: 'POST', body: fd, credentials: 'same-origin' })
+        .then(function (r) { if (!r.ok) throw new Error(); col.appendChild(card); })
+        .catch(function () { alert('Не удалось переместить сделку'); });
+    });
+  });
+})();
+</script>
+{% endif %}
+{% endblock %}

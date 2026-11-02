@@ -1,0 +1,46 @@
+---
+import Base from '../layouts/Base.astro';
+import Icon from '../components/Icon.astro';
+import { documents, cta, brand } from '../content/index.mjs';
+import EmblemVector from '../components/EmblemVector.astro';
+// плейсхолдеры XXXX подсвечиваем, но не меняем
+const ph = (v: string) => /[XХ]{3,}/.test(v);
+---
+<Base title={documents.title} description={documents.description} path="/dokumenty/" noindex>
+  <section class="page-hero">
+    <div class="container">
+      <p class="crumbs"><a href="/">Главная</a><span class="sep"></span>Документы</p>
+      <p class="eyebrow">Реквизиты</p>
+      <h1>{documents.h1}</h1>
+      <p class="lead">{documents.lead}</p>
+    </div>
+  </section>
+  <section class="section">
+    <div class="container">
+      <div class="passport" data-reveal>
+        <div class="pp-head">
+          <div class="pp-mark"><EmblemVector idp="pp" /></div>
+          <div><p class="pp-k">Паспорт компании</p><p class="pp-name">{brand.name}</p><p class="pp-tag">{brand.tagline}</p></div>
+        </div>
+        <dl class="pp-rows">
+          {documents.requisites.map(([k, v], i) => (
+            <div class:list={['pp-row', { 'is-ph': v && ph(v) }]}>
+              <dt><span>{String(i + 1).padStart(2, '0')}</span>{k}</dt>
+              <dd>{v ? (ph(v) ? <span class="pp-ph" title="Будет заполнено после проверки данных">{v}</span> : v) : <span data-placeholder>уточняется</span>}</dd>
+            </div>
+          ))}
+        </dl>
+        <p class="pp-note">Поля с XXXX заполним после регистрации и проверки данных.</p>
+      </div>
+    </div>
+  </section>
+  <section class="section">
+    <div class="container two faq-wrap">
+      <div data-reveal><p class="eyebrow">Дальше</p><h2>Что здесь появится</h2></div>
+      <div data-reveal>
+        <ul class="stamps">{documents.planned.map((x, i) => <li style={`--i:${i}`}><span class="stamp-k">Будет добавлено</span>{x}</li>)}</ul>
+        <p style="margin-top:28px"><a class="btn btn-gold" href="/kontakty/"><span>{cta.qualification}</span><span class="btn-ico"><Icon name="arrow" size={16} /></span></a></p>
+      </div>
+    </div>
+  </section>
+</Base>

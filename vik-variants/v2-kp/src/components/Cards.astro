@@ -1,0 +1,18 @@
+---
+import Icon from './Icon.astro';
+import { ui } from '../ui.mjs';
+const { items = [], query = '' } = Astro.props;
+// Колонки под число карточек, чтобы не оставалось серых «дыр» в сетке: 4 и 8 → по 4, кратные 3 → по 3.
+const n = items.length;
+const cols = n <= 3 ? Math.max(n, 1) : n % 4 === 0 ? 4 : n % 3 === 0 ? 3 : n === 5 ? 3 : 4;
+---
+<div class="cards" style={`--cols:${cols}`}>
+  {items.map((s) => (
+    <a class="card rv" href={`/uslugi/${s.slug}/${query}`}>
+      <Icon name={ui.iconOverride[s.id] ?? s.icon} size={28} />
+      <h3>{s.label}</h3>
+      <p>{s.cardLead}</p>
+      <span class="go">{ui.more} <Icon name="arrow" size={18} /></span>
+    </a>
+  ))}
+</div>

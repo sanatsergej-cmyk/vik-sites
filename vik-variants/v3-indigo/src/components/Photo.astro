@@ -1,0 +1,12 @@
+---
+// Реальное фото системы из photos.mjs: webp (480/750) + jpg, lazy, размеры заданы.
+const { ph, sizes = '(max-width: 700px) 90vw, 360px', cls = '' } = Astro.props;
+const base = ph.src.replace(/\.jpg$/, '');
+---
+<figure class:list={['photo', cls]}>
+  <picture>
+    <source type="image/webp" srcset={`${base}-480.webp 480w, ${base}.webp 750w`} sizes={sizes} />
+    <img src={ph.src} alt={ph.alt} width="750" height="1000" loading="lazy" decoding="async" />
+  </picture>
+  <figcaption>{ph.cap}</figcaption>
+</figure>

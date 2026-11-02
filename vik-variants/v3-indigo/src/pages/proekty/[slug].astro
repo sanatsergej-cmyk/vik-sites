@@ -1,0 +1,49 @@
+---
+import Base from '../../layouts/Base.astro';
+import Intake from '../../components/Intake.astro';
+import { cases, cta } from '../../content.mjs';
+import { ui } from '../../ui.mjs';
+
+export function getStaticPaths() {
+  return cases.map((c) => ({ params: { slug: c.slug }, props: { c } }));
+}
+const { c } = Astro.props;
+const path = `/proekty/${c.slug}/`;
+---
+<Base
+  title={`${c.title} | ВиК`}
+  description={c.task}
+  path={path}
+  crumbs={[{ name: ui.home, href: '/' }, { name: ui.nav.projects, href: '/proekty/' }, { name: c.title, href: path }]}
+>
+  <section class="page-hero">
+    <div class="container">
+      <p class="crumbs"><a href="/">{ui.home}</a> / <a href="/proekty/">{ui.nav.projects}</a> / {c.title}</p>
+      <p class="mono-label">{ui.page.project}</p>
+      <h1>{c.title}</h1>
+      <p class="lead">{c.task}</p>
+      <p class="muted">{ui.page.object} {c.object}{c.year && `, ${c.year}`}</p>
+    </div>
+  </section>
+  <section class="section">
+    <div class="container two">
+      <div>
+        <h2>{ui.page.role}</h2>
+        <p class="muted">{c.role}{c.partnerNote && `. ${c.partnerNote}`}</p>
+        <h2 class="mt">{ui.page.done}</h2>
+        <ul class="tick-list">{c.scope.map((x) => <li>{x}</li>)}</ul>
+      </div>
+      <div>
+        {c.approvals.length > 0 && (<><h2>{ui.page.approvals}</h2><ul class="tick-list">{c.approvals.map((x) => <li>{x}</li>)}</ul></>)}
+        {c.result.length > 0 && (<><h2 class="mt">{ui.page.result}</h2><ul class="tick-list">{c.result.map((x) => <li>{x}</li>)}</ul></>)}
+        {c.documents.length > 0 && (<><h2 class="mt">{ui.page.docs}</h2><ul class="tick-list">{c.documents.map((x) => <li>{x}</li>)}</ul></>)}
+      </div>
+    </div>
+    {c.images.length > 0 && (
+      <div class="container gallery">
+        {c.images.map((im) => <figure class="photo"><img src={im.src} alt={im.alt} loading="lazy" /></figure>)}
+      </div>
+    )}
+  </section>
+  <Intake title={cta.similar} />
+</Base>

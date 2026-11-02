@@ -1,0 +1,103 @@
+---
+import { directions, services, stages, form, route, brand } from '../content/index.mjs';
+import Icon from './Icon.astro';
+const { id = 'intake', title = form.title, node } = Astro.props;
+const L = form.labels;
+const enabled = import.meta.env.PUBLIC_FORM_ENABLED === '1';
+const endpoint = import.meta.env.PUBLIC_LEAD_ENDPOINT || '/api/public/lead';
+const msg = JSON.stringify({ ok: form.status.success, error: form.status.error, ...form.errors });
+const step = node != null ? route[node] : null;
+---
+<section class="intake" id={id} data-node={node}>
+  <div class="intake-bg" aria-hidden="true"></div>
+  <div class="container intake-grid">
+    <div class="intake-copy" data-reveal>
+      {step && <p class="stage-tag" data-node-mark><span>Этап {step.n}</span>{step.t}</p>}
+      <p class="eyebrow"><Icon name="clock" size={16} /> {form.eyebrow}</p>
+      <h2>{title}</h2>
+      <p class="intake-text">{form.text}</p>
+      <p class="muted small">{form.scope}</p>
+      <ul class="intake-contacts">
+        <li><Icon name="phone" size={18} /><a href="tel:+79916663572">+7 991 666-35-72</a></li>
+        <li><Icon name="pin" size={18} /><span>{brand.region}</span></li>
+      </ul>
+    </div>
+    <div class="bezel intake-shell" data-reveal style="--i:1">
+      <form class="intake-form bezel-core" method="post" action="#" data-intake data-enabled={enabled ? '1' : '0'} data-endpoint={endpoint} data-msg={msg} novalidate>
+        <input class="hp" type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true" />
+        <div class="field-row">
+          <label>{L.name}<input name="name" autocomplete="name" /></label>
+          <label>{L.contact} *<input name="contact" required autocomplete="tel" /></label>
+        </div>
+        <div class="field-row">
+          <label>
+            {L.direction}
+            <select name="direction">
+              <option value="">{form.placeholders.none}</option>
+              {directions.map((d) => <option value={d.slug}>{d.label}</option>)}
+            </select>
+          </label>
+          <label>
+            {L.service}
+            <select name="service">
+              <option value="">{form.placeholders.none}</option>
+              {services.map((s) => <option value={s.id}>{s.label}</option>)}
+            </select>
+          </label>
+        </div>
+        <div class="field-row">
+          <label>
+            {L.stage}
+            <select name="stage">
+              <option value="">{form.placeholders.none}</option>
+              {stages.map((s) => <option value={s.id}>{s.label}</option>)}
+            </select>
+          </label>
+          <label>{L.object}<input name="object" placeholder={form.placeholders.object} /></label>
+        </div>
+        <label>{L.task} *<textarea name="task" rows="4" required placeholder={form.placeholders.task}></textarea></label>
+        <label class="file">
+          {L.files}
+          <input type="file" name="files" multiple disabled={!enabled} accept=".pdf,.dwg,.dxf,.xls,.xlsx,.doc,.docx,.zip,.jpg,.jpeg,.png" />
+          <small>{form.hints.files} {!enabled && form.hints.filesPending}</small>
+        </label>
+        <label class="consent">
+          <input type="checkbox" name="consent" required />
+          <span>{form.consent.before} <a href="/consent/">{form.consent.consentLink}</a></span>
+        </label>
+        <p class="form-note">{form.consent.policy} <a href="/privacy/">{form.consent.policyLink}</a></p>
+        <button type="submit" class="btn btn-gold" disabled={!enabled}><span>{form.submit}</span><span class="btn-ico"><Icon name="arrow" size={16} /></span></button>
+        <p class="form-note" role="status" data-note>{!enabled && form.status.pending}</p>
+      </form>
+    </div>
+  </div>
+</section>
+
+<script is:inline>
+(function () {
+  var f = document.querySelector('[data-intake]');
+  if (!f) return;
+  var enabled = f.dataset.enabled === '1', note = f.querySelector('[data-note]'), M = JSON.parse(f.dataset.msg);
+  var btn = f.querySelector('button[type=submit]');
+  function show(t, bad) { note.textContent = t; note.style.color = bad ? 'var(--err, #e5736b)' : ''; }
+  f.addEventListener('submit', function (e) {
+    e.preventDefault();
+    if (!enabled) return;
+    var c = f.elements.contact.value.trim(), t = f.elements.task.value.trim();
+    if (c.length < 3) { show(M.contact, true); f.elements.contact.focus(); return; }
+    if (t.length < 3) { show(M.task, true); f.elements.task.focus(); return; }
+    if (!f.elements.consent.checked) { show(M.consent, true); return; }
+    var fd = new FormData(f);
+    fd.set('consent', '1'); fd.set('source', 'form');
+    var files = f.elements.files.files, big = false;
+    for (var i = 0; i < files.length; i++) if (files[i].size > 25 * 1024 * 1024) big = true;
+    if (big) { show(M.fileSize, true); return; }
+    btn.disabled = true; show('…', false);
+    fetch(f.dataset.endpoint, { method: 'POST', body: fd, credentials: 'same-origin' }).then(function (r) {
+      if (r.status === 422) return r.json().then(function (j) { throw new Error(/Тип файла/.test(j.detail || '') ? M.fileType : M.error); });
+      if (!r.ok) throw new Error(M.error);
+      f.reset(); show(M.ok, false);
+    }).catch(function (err) { show(err.message || M.error, true); }).then(function () { btn.disabled = false; });
+  });
+})();
+</script>

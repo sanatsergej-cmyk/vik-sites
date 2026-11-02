@@ -1,0 +1,25 @@
+---
+// Фото по направлению (флаг PUBLIC_PHOTOS). Подписи нейтральные, с пометкой photosNote.
+import Pic from './Pic.astro';
+import { photos, photosNote } from '../content.mjs';
+import { ui } from '../ui.mjs';
+const { dir = null, title = ui.photosTitle, exclude = null } = Astro.props;
+const on = import.meta.env.PUBLIC_PHOTOS === '1';
+const list = photos.filter((p) => (!dir || p.dir === dir) && p.id !== exclude);
+---
+{on && list.length > 0 && (
+  <section class="block">
+    <div class="container">
+      <h2 class="block-title">{title}</h2>
+      <div class="gallery gallery-flat">
+        {list.map((p, i) => (
+          <figure class="rv" style={`--i:${i}`}>
+            <div class="g-frame"><Pic src={p.src} alt={p.alt} width={750} height={1000} imgClass="g-img" parallax="0.04" /></div>
+            <figcaption><span class="mono">{String(i + 1).padStart(2, '0')}</span>{p.cap}</figcaption>
+          </figure>
+        ))}
+      </div>
+      <p class="note" data-placeholder>{photosNote}</p>
+    </div>
+  </section>
+)}

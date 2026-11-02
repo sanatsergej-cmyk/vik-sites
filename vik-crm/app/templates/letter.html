@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block content %}
+<p><a href="/deals/{{ deal.id }}">← {{ deal.title }}</a></p>
+<div class="head"><div><h1>Письмо клиенту</h1><p class="muted">Черновик для проверки. Письма отправляете вы: система ничего не отсылает сама.</p></div></div>
+<div class="cols letter">
+<section>
+  <form method="get" class="card form">
+    <label>Вид письма
+      <select name="kind" onchange="this.form.submit()">{% for k, label in kinds.items() %}<option value="{{ k }}" {{ 'selected' if kind == k }}>{{ label }}</option>{% endfor %}</select>
+    </label>
+    <label>Вид работ
+      <select name="service" onchange="this.form.submit()">{% for sid, topic in service_options %}<option value="{{ sid }}" {{ 'selected' if service_id == sid }}>{{ topic }}{% if is_priority(sid) %} (приоритет){% endif %}</option>{% endfor %}<option value="general" {{ 'selected' if not service_id }}>общее</option></select>
+    </label>
+    <label>Кому
+      <select name="contact" onchange="this.form.submit()">{% for c in contacts %}<option value="{{ c.id }}" {{ 'selected' if chosen and chosen.id == c.id }}>{{ c.name or c.email or c.phone or 'контакт' }}{% if c.do_not_contact %} (стоп-лист){% endif %}</option>{% else %}<option value="">нет контактов</option>{% endfor %}</select>
+    </label>
+    {% if kind in ('reply_kp', 'followup') %}
+    <label>Расчёт (КП)
+      <select name="estimate" onchange="this.form.submit()"><option value="">без КП</option>{% for e in estimates %}<option value="{{ e.id }}" {{ 'selected' if est and est.id == e.id }}>{{ e.title }}</option>{% endfor %}</select>
+    </label>
+    <label class="check"><input type="checkbox" name="total" value="1" {{ 'checked' if total == '1' }}> указать сумму с НДС в письме</label>
+    {% endif %}
+    {% if kind == 'offer' %}
+    <label>Повод (почему пишем именно им)<textarea name="reason" rows="3" placeholder="например: ваша компания объявила закупку на монтаж кабельных линий для логистического комплекса в Подольске">{{ reason }}</textarea></label>
+    {% endif %}
+    <button>Составить заново</button>
+  </form>
+  {% if kind == 'offer' %}
+  <p class="card" style="border-color:var(--gold)"><strong>Первичное письмо без запроса.</strong> Отправляйте только по конкретному поводу, на публичный корпоративный адрес, без скидок и акций. Для юридических лиц действует ст. 18 38-ФЗ (согласие адресата на рекламу по электросвязи), как это применять к вашему случаю, уточните у юриста.</p>
+  {% endif %}
+</section>
+<section>
+  {% if error %}<p class="card error">{{ error }}</p>{% endif %}
+  {% if letter %}
+  {% if letter.warnings %}<p class="card" style="border-color:var(--err)">Нужно заполнить: {{ letter.warnings|join(', ') }}. Места отмечены «[УТОЧНИТЬ: …]», пока они в тексте, записать письмо как отправленное нельзя.</p>{% endif %}
+  <form method="post" action="/deals/{{ deal.id }}/letter/sent" class="card form" id="letterform">
+    <input type="hidden" name="csrf" value="{{ csrf(request) }}">
+    <input type="hidden" name="kind" value="{{ kind }}">
+    <label>Адрес получателя<input name="to_email" value="{{ to_email }}" type="email"></label>
+    <label>Тема<input name="subject" value="{{ letter.subject }}" required></label>
+    <label>Текст<textarea name="body" rows="20" required>{{ letter.body }}</textarea></label>
+    <div class="inline">
+      <button type="button" id="copy">Скопировать</button>
+      <button type="button" id="mail" class="btn alt">Открыть в почте</button>
+      {% if user.role.value != 'viewer' %}<button>Записать как отправленное</button>{% endif %}
+    </div>
+    <p class="muted small">Вложите КП (xlsx) вручную: <a href="{{ '/estimates/' ~ est.id ~ '/kp.xlsx' if est else '#' }}">скачать КП</a>. Письмо запишется в историю сделки, при «Ответе с КП» сделка перейдёт в стадию «КП отправлено» и поставится задача на дожим.</p>
+  </form>
+  {% endif %}
+</section>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+(function () {
+  var f = document.getElementById('letterform');
+  if (!f) return;
+  document.getElementById('copy').addEventListener('click', function () {
+    var text = f.subject.value + '\n\n' + f.body.value;
+    if (navigator.clipboard) navigator.clipboard.writeText(text).then(function () { alert('Скопировано'); });
+  });
+  document.getElementById('mail').addEventListener('click', function () {
+    location.href = 'mailto:' + encodeURIComponent(f.to_email.value) + '?subject=' + encodeURIComponent(f.subject.value) + '&body=' + encodeURIComponent(f.body.value);
+  });
+})();
+</script>
+{% endblock %}

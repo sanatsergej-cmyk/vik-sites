@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% block content %}
+{% set pct = (s.win_rate * 100)|round|int if s.win_rate is not none else none %}
+<div class="head">
+  <div><h1>Дашборд</h1><p class="muted">Приоритет: земляные работы, монтаж трубопровода и кабеля, проектирование ИТП</p></div>
+  <div class="head-actions">
+    {% for d in (7, 30, 90) %}<a class="chip {{ 'on' if s.days == d }}" href="/?days={{ d }}">{{ d }} дн</a>{% endfor %}
+    {% if user.role.value != 'viewer' %}<a class="btn" href="/quick">+ Быстро добавить</a>{% endif %}
+  </div>
+</div>
+
+<div class="kpis">
+  <div class="card kpi"><span class="n">{{ s.open_count }}</span><span class="l">Открытых сделок</span><span class="sub">из них приоритетных: {{ s.priority_open }}</span></div>
+  <div class="card kpi"><span class="n">{{ s.pipeline|money0 }}</span><span class="l">Воронка (ожидаемая сумма)</span></div>
+  <div class="card kpi gold"><span class="n">{{ s.weighted|money0 }}</span><span class="l">Прогноз по вероятностям стадий</span></div>
+  <div class="card kpi"><span class="n">{{ (pct ~ '%') if pct is not none else '—' }}</span><span class="l">Конверсия в «Выиграна»</span><span class="sub">выиграно {{ s.won_count }}, проиграно {{ s.lost_count }} за {{ s.days }} дн</span></div>
+  <div class="card kpi"><span class="n">{{ s.avg_cycle|round(1) if s.avg_cycle is not none else '—' }}</span><span class="l">Средний цикл сделки, дней</span><span class="sub">выиграно на {{ s.won_sum|money0 }}</span></div>
+  <div class="card kpi"><span class="n">{{ s.new_period }}</span><span class="l">Новых за {{ s.days }} дн</span>
+    <svg class="spark" viewBox="0 0 160 40" preserveAspectRatio="none" aria-label="Новые сделки по неделям"><polyline fill="none" stroke="currentColor" stroke-width="2" points="{{ spark(s.weekly) }}"/></svg></div>
+</div>
+
+<div class="cols2">
+<section>
+  <h2>Воронка</h2>
+  <div class="card">
+    {% for f in s.funnel %}
+    <a class="frow" href="/deals?stage={{ f.key }}">
+      <span class="fl">{{ f.label }}</span>
+      <span class="fbar"><i style="width: {{ (f.count / s.funnel_max * 100)|round|int }}%"></i></span>
+      <span class="fv">{{ f.count }}<small>{{ f.sum|money0 }}</small></span>
+    </a>
+    {% endfor %}
+  </div>
+</section>
+<section>
+  <h2>Требует внимания</h2>
+  <div class="card attention">
+    <details open><summary>Просрочено задач <span class="badge late">{{ s.overdue_count }}</span></summary>
+      {% for t in s.overdue %}{% set d = s.deals_by_id[t.deal_id] %}<a href="/deals/{{ d.id }}">{{ d.title }}</a><span class="muted small">{{ t.title }} · {{ t.due_at|dt }}</span>{% else %}<span class="muted small">Нет</span>{% endfor %}
+    </details>
+    <details {{ 'open' if s.waiting }}><summary>Ждут нашего ответа <span class="badge">{{ s.waiting|length }}</span></summary>
+      {% for d in s.waiting %}<a href="/deals/{{ d.id }}">{{ d.title }}</a><span class="muted small">{{ s.companies[d.company_id] }}</span>{% else %}<span class="muted small">Нет</span>{% endfor %}
+    </details>
+    <details><summary>Нет следующего шага <span class="badge">{{ s.no_next_count }}</span></summary>
+      {% for d in s.no_next %}<a href="/deals/{{ d.id }}">{{ d.title }}</a><span class="muted small">{{ STAGES[d.stage.value] }}</span>{% else %}<span class="muted small">Нет</span>{% endfor %}
+    </details>
+    <details><summary>Зависли без движения 7+ дней <span class="badge">{{ s.stuck|length }}</span></summary>
+      {% for d in s.stuck %}<a href="/deals/{{ d.id }}">{{ d.title }}</a><span class="muted small">обновлена {{ d.updated_at|dt }}</span>{% else %}<span class="muted small">Нет</span>{% endfor %}
+    </details>
+  </div>
+</section>
+</div>
+
+<div class="cols3">
+<section>
+  <h2>Источники</h2>
+  <div class="card">
+    {% for name, n in s.by_source %}<div class="mrow"><span>{{ name }}</span><strong>{{ n }}</strong></div>{% else %}<span class="muted">Данных пока нет</span>{% endfor %}
+  </div>
+</section>
+<section>
+  <h2>Виды работ</h2>
+  <div class="card">
+    {% for x in s.by_service %}<div class="mrow"><span>{{ x.label }}{% if x.priority %}<span class="badge">приоритет</span>{% endif %}</span><strong>{{ x.count }}</strong></div>{% else %}<span class="muted">Данных пока нет</span>{% endfor %}
+  </div>
+</section>
+<section>
+  <h2>Причины проигрышей</h2>
+  <div class="card">
+    {% for name, n in s.lost_reasons %}<div class="mrow"><span>{{ name }}</span><strong>{{ n }}</strong></div>{% else %}<span class="muted">Проигранных сделок нет</span>{% endfor %}
+  </div>
+</section>
+</div>
+
+<h2>Сегодня и просрочено</h2>
+<div class="tbl"><table>
+  {% for t, d in tasks %}
+  <tr>
+    <td><a href="/deals/{{ d.id }}">{{ d.title }}</a><br><span class="muted small">{{ t.title }}</span></td>
+    <td>{% if t.due_at < now %}<span class="badge late">просрочено</span>{% else %}<span class="badge">сегодня</span>{% endif %}<br><span class="muted small">{{ t.due_at|dt }}</span></td>
+    <td>{% if user.role.value != 'viewer' %}<form method="post" action="/tasks/{{ t.id }}/done"><input type="hidden" name="csrf" value="{{ csrf(request) }}"><input type="hidden" name="next" value="/"><button>Готово</button></form>{% endif %}</td>
+  </tr>
+  {% else %}<tr><td class="muted">На сегодня задач нет</td></tr>{% endfor %}
+</table></div>
+{% endblock %}

@@ -1,0 +1,52 @@
+---
+import Logo from './Logo.astro';
+import { nav, footer, documents, brand } from '../content.mjs';
+import { ui } from '../ui.mjs';
+const c = footer.contacts;
+const phone = (documents.requisites.find(([k]) => k === 'Телефон') ?? [])[1] ?? '';
+const tel = phone.replace(/[^\d+]/g, '');
+---
+<footer class="site-footer">
+  <div class="container footer-top">
+    <div class="footer-brand">
+      <Logo size={36} />
+      <p class="muted">{footer.about}</p>
+    </div>
+    <ul class="footer-contacts">
+      <li><span class="mono">{c.phone}</span>{phone && <a href={`tel:${tel}`}>{phone}</a>}</li>
+      <li><span class="mono">{c.email}</span><span data-placeholder>{c.pendingEmail}</span></li>
+      <li><span class="mono">{c.telegram}</span><span data-placeholder>{c.pendingContact}</span></li>
+      <li><span class="mono">{c.address}</span><span data-placeholder>{c.pendingAddress}</span></li>
+    </ul>
+  </div>
+  <div class="container footer-nav">
+    <div>
+      <h3 class="mono">{ui.nav.directions}</h3>
+      <ul>{nav.directions.map((l) => <li><a href={l.href}>{l.label}</a></li>)}</ul>
+    </div>
+    <div>
+      <h3 class="mono">{ui.nav.services}</h3>
+      <ul>{[...nav.services, ...(nav.extras ?? [])].map((l) => <li><a href={l.href}>{l.label}</a></li>)}</ul>
+    </div>
+    <div>
+      <h3 class="mono">{ui.nav.works}</h3>
+      <ul>{nav.works.map((l) => <li><a href={l.href}>{l.label}</a></li>)}</ul>
+    </div>
+    <div>
+      <h3 class="mono">{ui.nav.company}</h3>
+      <ul>
+        <li><a href="/o-kompanii/">{ui.nav.about}</a></li>
+        <li><a href="/proekty/">{ui.nav.projects}</a></li>
+        {nav.knowledge && <li><a href={nav.knowledge.href}>{nav.knowledge.label}</a></li>}
+        <li><a href="/dokumenty/">{ui.nav.documents}</a></li>
+        <li><a href="/kontakty/">{ui.nav.contacts}</a></li>
+        <li><a href="/privacy/">{ui.nav.privacy}</a></li>
+        <li><a href="/consent/">{ui.nav.consent}</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="container footer-bottom">
+    <p>{footer.copyright}</p>
+    <p>{footer.disclaimer}</p>
+  </div>
+</footer>

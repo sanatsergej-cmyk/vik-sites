@@ -1,0 +1,37 @@
+---
+import Base from '../../layouts/Base.astro';
+import PageHero from '../../components/PageHero.astro';
+import IntakeForm from '../../components/IntakeForm.astro';
+import { cases, cta } from '../../content.mjs';
+import { ui } from '../../ui.mjs';
+
+export function getStaticPaths() {
+  return cases.map((c) => ({ params: { slug: c.slug }, props: { c } }));
+}
+const { c } = Astro.props;
+const path = `/proekty/${c.slug}/`;
+---
+<Base title={`${c.title} | ВиК`} description={c.task} path={path} crumbs={[{ name: ui.home, href: '/' }, { name: ui.nav.projects, href: '/proekty/' }, { name: c.title, href: path }]}>
+  <PageHero crumbs={[{ name: ui.nav.projects, href: '/proekty/' }, { name: c.title }]} eyebrow={ui.case.label} title={c.title} lead={c.task} meta={`${ui.case.object}: ${c.object}${c.year ? `, ${c.year}` : ''}`} />
+  <section class="block">
+    <div class="container cols">
+      <div>
+        <h2 class="block-title">{ui.case.role}</h2>
+        <p class="txt">{c.role}{c.partnerNote && `. ${c.partnerNote}`}</p>
+        <h2 class="block-title" style="margin-top:40px">{ui.case.scope}</h2>
+        <ul class="list">{c.scope.map((x) => <li>{x}</li>)}</ul>
+      </div>
+      <div>
+        {c.approvals.length > 0 && (<><h2 class="block-title">{ui.case.approvals}</h2><ul class="list">{c.approvals.map((x) => <li>{x}</li>)}</ul></>)}
+        {c.result.length > 0 && (<><h2 class="block-title" style="margin-top:40px">{ui.case.result}</h2><ul class="list">{c.result.map((x) => <li>{x}</li>)}</ul></>)}
+        {c.documents.length > 0 && (<><h2 class="block-title" style="margin-top:40px">{ui.case.documents}</h2><ul class="list">{c.documents.map((x) => <li>{x}</li>)}</ul></>)}
+      </div>
+    </div>
+    {c.images.length > 0 && (
+      <div class="container gallery gallery-flat" style="margin-top:40px">
+        {c.images.map((im) => <figure><div class="g-frame"><img class="g-img" src={im.src} alt={im.alt} loading="lazy" /></div></figure>)}
+      </div>
+    )}
+  </section>
+  <IntakeForm title={cta.similar} />
+</Base>

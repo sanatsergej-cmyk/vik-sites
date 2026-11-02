@@ -1,0 +1,237 @@
+---
+// Изометрическая схема одной системы. variant="icon" — значок для плиток и «СМР по системам»,
+// variant="scheme" — схема вверху страницы направления (подписи-выноски из scopeGroups направления).
+import { makeIso } from '../lib/iso.mjs';
+import IsoPipe from './IsoPipe.astro';
+import Callout from './Callout.astro';
+import { directions } from '../content.mjs';
+
+const { slug, variant = 'icon', cls = '' } = Astro.props;
+const d = directions.find((x) => x.slug === slug);
+const icon = variant === 'icon';
+const S = icon ? 15 : 40;
+const I = makeIso(S);
+const { p, path, box, cyl, section, rectX, rectY } = I;
+const cS = Math.cos(Math.PI / 6) * S;
+
+const C = {
+  vodosnabzhenie: 'var(--sys-water)', teplosnabzhenie: 'var(--sys-heat)', elektrosnabzhenie: 'var(--sys-elec)',
+  ventilyatsiya: 'var(--sys-vent)', gazosnabzhenie: 'var(--sys-gas)',
+};
+const col = C[slug];
+
+// Список примитивов: pipe | poly | path | cyl | co (выноска)
+const items = [];
+const add = (o) => items.push(o);
+const boxItem = (b, cls, k, dur = 0.3) => add({ t: 'box', b, cls, k, dur });
+
+let callouts = [];
+let vb;
+
+if (icon) {
+  // Значок: плита грунта + элемент системы
+  const G = box(0, 0, -1.4, 5, 3.2, 1.4);
+  add({ t: 'poly', points: G.top, cls: 'g-top' });
+  add({ t: 'poly', points: G.left, cls: 'g-face g-left' });
+  add({ t: 'poly', points: G.right, cls: 'g-face g-right' });
+  add({ t: 'path', d: G.edges, cls: 'g-edge' });
+  if (slug === 'vodosnabzhenie') {
+    add({ t: 'pipe', d: path([[0, 2.2, -0.7], [5, 2.2, -0.7]]), c: col, w: 4 });
+    add({ t: 'cyl', c: cyl(3.4, 2.2, -0.95, 0.15, 0.34), col });
+  } else if (slug === 'teplosnabzhenie') {
+    boxItem(box(0.6, 0.5, 0, 1.5, 1.2, 1.2), 'mini-b');
+    add({ t: 'pipe', d: path([[5, 2.0, -0.7], [1.5, 2.0, -0.7], [1.5, 1.7, -0.7], [1.5, 1.7, 0.2]]), c: col, w: 3 });
+    add({ t: 'pipe', d: path([[5, 2.5, -0.7], [1.2, 2.5, -0.7], [1.2, 1.7, -0.7], [1.2, 1.7, 0.2]]), c: 'var(--sys-heat-2)', w: 3 });
+  } else if (slug === 'elektrosnabzhenie') {
+    add({ t: 'pipe', d: path([[0, 2.4, -0.5], [3.6, 2.4, -0.5], [3.6, 1.5, -0.5], [3.6, 1.5, 0.1]]), c: col, w: 3 });
+    boxItem(box(3.2, 0.9, 0, 0.9, 0.6, 1.6), 'mini-b');
+    const z = (a, b, zz) => p(4.1, a, zz);
+    const bolt = [z(1.1, 0, 1.35), z(1.25, 0, 0.85), z(1.05, 0, 0.85), z(1.25, 0, 0.35)];
+    add({ t: 'path', d: 'M' + bolt.map((q) => q.join(' ')).join(' L'), cls: 'bolt', c: col });
+  } else if (slug === 'ventilyatsiya') {
+    boxItem(box(0.7, 0.5, 0, 3.2, 2.2, 1.5), 'mini-b');
+    boxItem(box(2.0, 0.9, 1.5, 0.9, 0.7, 0.5), 'mini-u');
+    add({ t: 'pipe', d: path([[0.9, 1.25, 1.75], [2.0, 1.25, 1.75]]), c: col, w: 5, cls: 'duct' });
+    add({ t: 'pipe', d: path([[2.9, 1.25, 1.75], [3.7, 1.25, 1.75], [3.7, 2.4, 1.75]]), c: col, w: 5, cls: 'duct' });
+  } else if (slug === 'gazosnabzhenie') {
+    add({ t: 'pipe', d: path([[0, 2.3, -0.7], [2.8, 2.3, -0.7], [2.8, 1.6, -0.7], [2.8, 1.6, 1.3], [2.3, 1.6, 1.3]]), c: col, w: 3.5 });
+    const v = p(2.8, 1.6, 0.65);
+    add({ t: 'valve', x: v[0], y: v[1], r: 4, c: col });
+    add({ t: 'path', d: path([[4.3, 2.6, 0], [4.3, 2.6, 1.0]]), cls: 'post' });
+  }
+  vb = '-48 -36 120 124';
+} else {
+  // Схема направления: грунт 10 x 6, здание как контекст
+  const deep = slug === 'ventilyatsiya' ? -1.2 : -3.2;
+  const G = box(0, 0, deep, 10, 6, -deep);
+  const grid = [
+    ...Array.from({ length: 9 }, (_, i) => path([[i + 1, 0, 0], [i + 1, 6, 0]])),
+    ...Array.from({ length: 5 }, (_, j) => path([[0, j + 1, 0], [10, j + 1, 0]])),
+  ].join(' ');
+  const strata = (deep < -2 ? [-1.1, -2.2] : [-0.6]).map((z) => path([[0, 6, z], [10, 6, z]]) + ' ' + path([[10, 0, z], [10, 6, z]])).join(' ');
+  add({ t: 'grp', k: 0, dur: 0.5, kids: [
+    { t: 'poly', points: G.top, cls: 'g-top' },
+    { t: 'path', d: grid, cls: 'g-grid' },
+    { t: 'poly', points: G.left, cls: 'g-face g-left' },
+    { t: 'poly', points: G.right, cls: 'g-face g-right' },
+    { t: 'path', d: strata, cls: 'g-strata' },
+  ] });
+  add({ t: 'drawpath', d: G.edges, cls: 'g-edge', k: 0, dur: 0.7 });
+
+  const bottomY = (X) => {
+    const front = (10 - 6) * cS;
+    const yb = (x, y) => (x + y) * 0.5 * S - deep * S;
+    // левая нижняя кромка: (x, 6, deep); правая: (10, y, deep)
+    return X <= front ? yb(X / cS + 6, 6) : yb(10, 10 - X / cS);
+  };
+  const down = (x, y, z, lx) => { const [ax, ay] = p(x, y, z); return { ax, ay, lx, ly: bottomY(lx) + 42 }; };
+  const side = (x, y, z, lx, ly) => { const [ax, ay] = p(x, y, z); return { ax, ay, lx, ly }; };
+  const atX = (lx, y) => lx / cS + y;
+  const g0 = d.scopeGroups[0]?.items ?? [];
+  const g1 = d.scopeGroups[1]?.items ?? [];
+
+  const bldg = slug === 'ventilyatsiya' ? box(1.4, 0.6, 0, 5.0, 3.4, 3.4) : box(1.2, 0.6, 0, 4.2, 3.0, 3.0);
+  const bx1 = slug === 'ventilyatsiya' ? 6.4 : 5.4;
+  const by1 = slug === 'ventilyatsiya' ? 4.0 : 3.6;
+  const bh = slug === 'ventilyatsiya' ? 3.4 : 3.0;
+  const bx0 = slug === 'ventilyatsiya' ? 1.4 : 1.2;
+  add({ t: 'grp', k: 0.3, dur: 0.5, cls: 'rise', kids: [
+    { t: 'poly', points: bldg.left, cls: 'b-face b-left ctx' },
+    { t: 'poly', points: bldg.right, cls: 'b-face b-right ctx' },
+    { t: 'poly', points: bldg.top, cls: 'b-top ctx' },
+    { t: 'path', d: path([[bx0, by1, bh / 2], [bx1, by1, bh / 2], [bx1, 0.6, bh / 2]]), cls: 'b-floor' },
+  ] });
+  add({ t: 'drawpath', d: bldg.edges, cls: 'b-edge ctx-edge', k: 0.3, dur: 0.6 });
+
+  if (slug === 'vodosnabzhenie') {
+    const sz = (x) => -2.2 - (0.4 * x) / 10;
+    add({ t: 'pipe', d: path([[0, 5.2, -2.2], [10, 5.2, -2.6]]), c: 'var(--sys-sewer)', w: 10, k: 0.8 });
+    add({ t: 'pipe', d: path([[2.4, 3.3, 0], [2.4, 3.3, -1.9], [2.4, 5.2, sz(2.4)]]), c: 'var(--sys-sewer)', w: 7, k: 1.2, dur: 0.4 });
+    add({ t: 'pipe', d: path([[0, 4.4, -1.4], [10, 4.4, -1.4]]), c: col, w: 8, k: 1 });
+    add({ t: 'pipe', d: path([[3.6, 4.4, -1.4], [3.6, 3.3, -1.4], [3.6, 3.3, 0]]), c: col, w: 6, k: 1.4, dur: 0.4 });
+    add({ t: 'pipe', d: path([[4.6, 3.95, -0.9], [10, 3.95, -1.0]]), c: 'var(--sys-storm)', w: 7, k: 1.6 });
+    boxItem(box(5.9, 3.7, -0.6, 0.6, 0.5, 0.62), 'grate', 1.8);
+    add({ t: 'cyl', c: cyl(7.6, 4.4, -1.8, 0.02, 0.38), col, k: 1.8 });
+    add({ t: 'pipe', d: path([[3.6, 3.3, 0], [3.6, 3.3, 2.7]]), c: col, w: 3, k: 2.1, dur: 0.4, dash: true });
+    add({ t: 'pipe', d: path([[2.4, 3.3, 0], [2.4, 3.3, 2.7]]), c: 'var(--sys-sewer)', w: 3, k: 2.15, dur: 0.4, dash: true });
+    add({ t: 'sec', points: section('x', 10, 4.4, -1.4, 0.13), c: col, k: 1.5 });
+    add({ t: 'sec', points: section('x', 10, 5.2, -2.6, 0.16), c: 'var(--sys-sewer)', k: 1.3 });
+    add({ t: 'sec', points: section('x', 10, 3.95, -1.0, 0.11), c: 'var(--sys-storm)', k: 1.9 });
+    callouts = [
+      { ...down(atX(-140, 5.2), 5.2, sz(atX(-140, 5.2)), -140), text: g0[1] },
+      { ...down(atX(-50, 4.4), 4.4, -1.4, -50), text: g0[0] },
+      { ...down(atX(40, 3.95), 3.95, -0.92, 40), text: g0[2] },
+      { ...side(7.6, 4.4, 0.02, 215, 30), text: g0[3] },
+      { ...side(3.6, 3.3, 2.0, 215, -70), text: g1[0] },
+    ];
+  } else if (slug === 'teplosnabzhenie') {
+    boxItem(box(0, 4.2, -1.85, 10, 0.75, 0.7), 'chan', 0.7);
+    add({ t: 'pipe', d: path([[0, 4.38, -1.5], [10, 4.38, -1.5]]), c: col, w: 6, k: 0.9 });
+    add({ t: 'pipe', d: path([[0, 4.75, -1.5], [10, 4.75, -1.5]]), c: 'var(--sys-heat-2)', w: 6, k: 1.0 });
+    boxItem(box(6.6, 3.9, -2.4, 1.3, 1.3, 1.65), 'chamber', 1.4);
+    add({ t: 'cyl', c: cyl(7.25, 4.55, -0.75, 0.02, 0.26), col, k: 1.5 });
+    boxItem(box(2.5, 2.1, 0, 1.4, 1.0, 1.0), 'unit', 1.6);
+    add({ t: 'pipe', d: path([[3.0, 4.38, -1.5], [3.0, 3.25, -1.5], [3.0, 3.25, 0.3]]), c: col, w: 5, k: 1.8, dur: 0.4 });
+    add({ t: 'pipe', d: path([[3.35, 4.75, -1.5], [3.35, 3.4, -1.5], [3.35, 3.4, 0.3]]), c: 'var(--sys-heat-2)', w: 5, k: 1.85, dur: 0.4 });
+    add({ t: 'pipe', d: path([[2.0, 3.3, 0.6], [2.0, 3.3, 2.8], [4.8, 3.3, 2.8]]), c: col, w: 3, k: 2.2, dur: 0.4, dash: true });
+    add({ t: 'sec', points: section('x', 10, 4.38, -1.5, 0.1), c: col, k: 1.2 });
+    add({ t: 'sec', points: section('x', 10, 4.75, -1.5, 0.1), c: 'var(--sys-heat-2)', k: 1.25 });
+    const ex = p(10, 4.56, -1.5);
+    callouts = [
+      { ...down(atX(-140, 4.75), 4.75, -1.5, -140), text: g0[0] },
+      { ...side(7.0, 5.2, -1.4, -50, bottomY(-50) + 42), text: g0[2] },
+      { ax: ex[0], ay: ex[1], lx: ex[0], ly: bottomY(ex[0]) + 42, text: g0[1] },
+      { ...side(2.6, 3.3, 2.8, 215, -70), text: g1[2] },
+      { ...side(3.9, 2.4, 1.0, 215, 10), text: g1[0] },
+    ];
+  } else if (slug === 'elektrosnabzhenie') {
+    boxItem(box(0, 4.3, -1.15, 10, 0.85, 0.3), 'bed', 0.7);
+    add({ t: 'drawpath', d: path([[0, 4.7, -0.55], [10, 4.7, -0.55]]), cls: 'tape', k: 0.8, dur: 0.6 });
+    [4.45, 4.7, 4.95].forEach((y, i) => add({ t: 'pipe', d: path([[0, y, -0.95], [10, y, -0.95]]), c: col, w: 3.5, k: 0.9 + i * 0.1 }));
+    boxItem(box(7.2, 3.8, 0, 0.9, 0.55, 1.45), 'unit', 1.3);
+    add({ t: 'pipe', d: path([[7.65, 4.7, -0.95], [7.65, 4.1, -0.95], [7.65, 4.1, 0]]), c: col, w: 3, k: 1.4, dur: 0.3 });
+    add({ t: 'pipe', d: path([[3.4, 4.45, -0.95], [3.4, 3.3, -0.95], [3.4, 3.3, 0.3]]), c: col, w: 3, k: 1.5, dur: 0.4 });
+    add({ t: 'pipe', d: path([[3.4, 3.3, 0.3], [3.4, 3.3, 2.6]]), c: col, w: 2.5, k: 1.8, dur: 0.3, dash: true });
+    add({ t: 'pipe', d: path([[1.6, 3.3, 2.6], [5.0, 3.3, 2.6], [5.0, 1.0, 2.6]]), c: col, w: 4, k: 2.0, dur: 0.4, dash: true });
+    [4.45, 4.7, 4.95].forEach((y) => add({ t: 'sec', points: section('x', 10, y, -0.95, 0.06), c: col, k: 1.2 }));
+    callouts = [
+      { ...down(atX(-140, 4.95), 4.95, -0.95, -140), text: g0[0] },
+      { ...side(5.0, 2.0, 2.6, 215, -80), text: g1[1] },
+      { ...side(3.4, 3.3, 1.5, 215, -10), text: g1[0] },
+      { ...side(8.1, 4.1, 1.2, 215, 70), text: g0[1] },
+    ];
+  } else if (slug === 'ventilyatsiya') {
+    boxItem(box(3.4, 1.2, 3.4, 1.6, 1.1, 0.8), 'unit', 0.9);
+    add({ t: 'pipe', d: path([[1.9, 1.75, 3.75], [3.4, 1.75, 3.75]]), c: col, w: 11, k: 1.1, cls: 'duct' });
+    add({ t: 'pipe', d: path([[5.0, 1.75, 3.75], [6.0, 1.75, 3.75], [6.0, 3.5, 3.75]]), c: col, w: 11, k: 1.2, cls: 'duct' });
+    add({ t: 'pipe', d: path([[2.0, 1.75, 3.4], [2.0, 1.75, 0.4]]), c: col, w: 7, k: 1.5, dur: 0.4, dash: true });
+    add({ t: 'pipe', d: path([[2.0, 3.7, 2.9], [6.0, 3.7, 2.9]]), c: col, w: 7, k: 1.7, dur: 0.4, dash: true });
+    add({ t: 'pipe', d: path([[2.0, 3.7, 1.2], [6.0, 3.7, 1.2]]), c: col, w: 7, k: 1.8, dur: 0.4, dash: true });
+    add({ t: 'poly', points: rectX(6.4, 1.2, 2.0, 0.9, 0.8), cls: 'grille', k: 1.9 });
+    callouts = [
+      { ...side(4.2, 1.75, 4.2, 215, -150), text: g0[2] },
+      { ...side(6.0, 2.6, 3.75, 215, -60), text: g0[1] },
+    ];
+  } else if (slug === 'gazosnabzhenie') {
+    add({ t: 'drawpath', d: path([[0, 4.6, -0.7], [10, 4.6, -0.7]]), cls: 'tape', k: 0.8, dur: 0.6 });
+    add({ t: 'pipe', d: path([[0, 4.6, -1.2], [10, 4.6, -1.2]]), c: col, w: 7, k: 0.9 });
+    add({ t: 'pipe', d: path([[4.6, 4.6, -1.2], [4.6, 3.95, -1.2], [4.6, 3.95, 1.0], [4.6, 3.6, 1.0]]), c: col, w: 5, k: 1.4, dur: 0.5 });
+    const v = p(4.6, 3.95, 0.5);
+    add({ t: 'valve', x: v[0], y: v[1], r: 8, c: col, k: 1.8 });
+    add({ t: 'drawpath', d: path([[8, 4.9, 0], [8, 4.9, 1.1]]), cls: 'post', k: 1.9, dur: 0.3 });
+    add({ t: 'sec', points: section('x', 10, 4.6, -1.2, 0.12), c: col, k: 1.3 });
+    callouts = [
+      { ...down(atX(-50, 4.6), 4.6, -1.2, -50), text: g0[0] },
+      { ...side(4.6, 3.95, 1.0, 215, -30), text: d.label },
+    ];
+  }
+  callouts = callouts.filter((c) => c.text).map((c, i) => ({ ...c, idx: String(i + 1), k: 2.3 + i * 0.12 }));
+  vb = slug === 'ventilyatsiya' ? '-200 -200 660 520' : '-240 -150 700 680';
+}
+---
+<svg
+  class:list={['iso', icon ? 'iso-icon' : 'iso-scheme', cls]}
+  viewBox={vb}
+  data-scene={icon ? undefined : ''}
+  data-mode={icon ? undefined : 'time'}
+  data-steps={icon ? undefined : 3}
+  role={icon ? 'presentation' : 'img'}
+  aria-hidden={icon ? 'true' : undefined}
+  aria-label={icon ? undefined : d.label}
+  style={`--c:${col}`}
+>
+  {items.map((o) => {
+    const L = !icon && o.k !== undefined;
+    const la = L ? { 'data-k': o.k, 'data-d': o.dur ?? 0.4 } : {};
+    if (o.t === 'pipe') return <IsoPipe d={o.d} c={o.c} w={o.w} k={L ? o.k : undefined} dur={o.dur ?? 0.5} dash={o.dash} cls={o.cls ?? ''} />;
+    if (o.t === 'poly') return <polygon class:list={[o.cls, { L, fade: L }]} points={o.points} {...la} />;
+    if (o.t === 'path') return <path class:list={[o.cls, { L, fade: L }]} d={o.d} style={o.c ? `--c:${o.c}` : undefined} {...la} />;
+    if (o.t === 'drawpath') return <g class:list={[{ L }]} {...la}><path class:list={['draw', o.cls]} d={o.d} pathLength="1" /></g>;
+    if (o.t === 'sec') return <polygon class:list={['sec', { L, fade: L }]} points={o.points} style={`--c:${o.c}`} {...la} />;
+    if (o.t === 'valve') return <path class:list={['valve', { L, fade: L }]} style={`--c:${o.c}`} d={`M${o.x - o.r} ${o.y - o.r * 0.8} L${o.x + o.r} ${o.y + o.r * 0.8} L${o.x + o.r} ${o.y - o.r * 0.8} L${o.x - o.r} ${o.y + o.r * 0.8} Z`} {...la} />;
+    if (o.t === 'cyl') return (
+      <g class:list={[{ L, fade: L }]} style={`--c:${o.col}`} {...la}>
+        <path class="cyl-side" d={o.c.sides} />
+        <ellipse class="cyl-top" cx={o.c.top.cx} cy={o.c.top.cy} rx={o.c.top.rx} ry={o.c.top.ry} />
+      </g>
+    );
+    if (o.t === 'box') return (
+      <g class:list={['bx', o.cls, { L, fade: L }]} {...la}>
+        <polygon class="bx-l" points={o.b.left} /><polygon class="bx-r" points={o.b.right} /><polygon class="bx-t" points={o.b.top} />
+        <path class="bx-e" d={o.b.edges} />
+      </g>
+    );
+    if (o.t === 'grp') return (
+      <g class:list={[o.cls, { L, fade: L }]} {...la}>
+        {o.kids.map((c) => c.t === 'poly' ? <polygon class={c.cls} points={c.points} /> : <path class={c.cls} d={c.d} />)}
+      </g>
+    );
+    return null;
+  })}
+  {callouts.map((c) => <Callout {...c} wrap={22} />)}
+</svg>
+{!icon && callouts.length > 0 && (
+  <ol class="legend">
+    {callouts.map((c) => <li><span class="legend-n">{c.idx}</span>{c.text}</li>)}
+  </ol>
+)}

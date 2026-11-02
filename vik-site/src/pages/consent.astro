@@ -1,0 +1,25 @@
+---
+import Base from '../layouts/Base.astro';
+import Icon from '../components/Icon.astro';
+import { consent } from '../content/index.mjs';
+---
+<Base title={consent.title} description={consent.description} path="/consent/" noindex>
+  <section class="page-hero narrow">
+    <div class="container doc">
+      <p class="crumbs"><a href="/">Главная</a><span class="sep"></span>Согласие</p>
+      <p class="eyebrow">Документ</p>
+      <h1>{consent.h1}</h1>
+    </div>
+  </section>
+  <section class="section">
+    <div class="container doc">
+      <div class="draft">
+        <span class="aud-ico"><Icon name="remarks" size={22} /></span>
+        <p style="margin:0"><strong>{consent.draftNote}</strong></p>
+      </div>
+      <p class="consent-intro">{consent.intro}</p>
+      {consent.items.map((i) => <div class="group"><h2>{i.h}</h2><p>{i.p}</p></div>)}
+      <p class="muted" style="margin-top:24px">{consent.outro}</p>
+    </div>
+  </section>
+</Base>

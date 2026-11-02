@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+{% block content %}
+{% set w = user.role.value != 'viewer' %}
+<div class="head">
+  <div>
+    <h1>{{ deal.title }}{% if is_priority(deal.service) %}<span class="badge">приоритет</span>{% endif %}</h1>
+    <p class="muted"><a href="/companies/{{ company.id }}">{{ company.name }}</a> · источник: {{ deal.source }} · {{ deal.service|service_label if deal.service else 'вид работ не указан' }}{% if deal.amount_expected %} · {{ deal.amount_expected|money }}{% endif %}</p>
+  </div>
+  {% if w %}
+  <form method="post" action="/deals/{{ deal.id }}/stage" class="inline">
+    <input type="hidden" name="csrf" value="{{ csrf(request) }}">
+    <select name="stage">{% for key, label in STAGES.items() %}<option value="{{ key }}" {{ 'selected' if deal.stage.value == key else '' }}>{{ label }}</option>{% endfor %}</select>
+    <input name="lost_reason" placeholder="Причина (если проиграна)" value="{{ deal.lost_reason }}">
+    <button>Сменить стадию</button>
+  </form>
+  {% else %}<span class="chip on">{{ STAGES[deal.stage.value] }}</span>{% endif %}
+</div>
+
+{% if w %}<p class="inline"><span class="muted small">Письмо клиенту:</span>
+  <a class="chip" href="/deals/{{ deal.id }}/letter?kind=reply_kp">ответ с КП</a>
+  <a class="chip" href="/deals/{{ deal.id }}/letter?kind=request_docs">запросить данные</a>
+  <a class="chip" href="/deals/{{ deal.id }}/letter?kind=followup">дожим</a>
+  <a class="chip" href="/deals/{{ deal.id }}/letter?kind=offer">первичное предложение</a></p>{% endif %}
+{% if reused %}<p class="card" style="border-color:var(--gold)">Контакт уже был в базе: сделка привязана к существующему клиенту.</p>{% endif %}
+{% if w %}<details class="card editbox"><summary>Редактировать сделку</summary>
+  <form method="post" action="/deals/{{ deal.id }}/edit" class="form">
+    <input type="hidden" name="csrf" value="{{ csrf(request) }}">
+    <div class="two">
+      <label>Название<input name="title" value="{{ deal.title }}" required></label>
+      <label>Вид работ<select name="service"><option value="">Не выбрано</option>
+        <optgroup label="Приоритетные">{% for sv in SERVICES if sv.priority %}<option value="{{ sv.id }}" {{ 'selected' if deal.service == sv.id }}>{{ sv.label }}</option>{% endfor %}</optgroup>
+        <optgroup label="Остальные">{% for sv in SERVICES if not sv.priority %}<option value="{{ sv.id }}" {{ 'selected' if deal.service == sv.id }}>{{ sv.label }}</option>{% endfor %}</optgroup></select></label>
+      <label>Направление<input name="direction" value="{{ deal.direction }}"></label>
+      <label>Ожидаемая сумма, ₽<input name="amount_expected" value="{{ deal.amount_expected if deal.amount_expected is not none else '' }}"></label>
+      <label>Ответственный<select name="owner_id"><option value="">—</option>{% for o in owners %}<option value="{{ o.id }}" {{ 'selected' if deal.owner_id == o.id }}>{{ o.name or o.email }}</option>{% endfor %}</select></label>
+    </div>
+    <button>Сохранить</button>
+  </form>
+</details>{% endif %}
+
+<div class="cols">
+<section>
+  <h2>Задачи и follow-up</h2>
+  <div class="tbl"><table>
+    {% for t in tasks %}
+    <tr>
+      <td>{{ t.title }}{% if t.auto %}<span class="badge">авто</span>{% endif %}</td>
+      <td>{{ t.due_at|dt }}{% if not t.done and t.due_at < now %}<span class="badge late">просрочено</span>{% endif %}</td>
+      <td>{% if t.done %}<span class="badge ok">сделано</span>{% elif w %}<form method="post" action="/tasks/{{ t.id }}/done"><input type="hidden" name="csrf" value="{{ csrf(request) }}"><input type="hidden" name="next" value="/deals/{{ deal.id }}"><button>Готово</button></form>{% endif %}</td>
+    </tr>
+    {% else %}<tr><td class="muted">Задач нет</td></tr>{% endfor %}
+  </table></div>
+  {% if w %}<form method="post" action="/deals/{{ deal.id }}/tasks" class="inline">
+    <input type="hidden" name="csrf" value="{{ csrf(request) }}">
+    <input name="title" placeholder="Напомнить: что сделать" required style="min-width:240px">
+    <select name="days"><option value="0">сегодня</option><option value="1" selected>через 1 день</option><option value="3">через 3 дня</option><option value="7">через неделю</option><option value="14">через 2 недели</option></select>
+    <button>Добавить</button>
+  </form>{% endif %}
+
+  <h2>Расчёты и КП</h2>
+  <div class="tbl"><table>
+    {% for e in estimates %}<tr><td><a href="/estimates/{{ e.id }}">{{ e.title }}</a></td><td>{{ e.status }}</td><td>{{ totals[e.id]|money }}</td></tr>
+    {% else %}<tr><td class="muted">Расчётов нет</td></tr>{% endfor %}
+  </table></div>
+  {% if w %}<form method="post" action="/deals/{{ deal.id }}/estimates" class="inline">
+    <input type="hidden" name="csrf" value="{{ csrf(request) }}"><input name="title" placeholder="Название расчёта" required><button>Создать расчёт</button>
+  </form>{% endif %}
+
+  <h2>Файлы</h2>
+  <div class="tbl"><table>
+    {% for f in files %}<tr><td><a href="/files/{{ f.id }}">{{ f.filename }}</a></td><td>{{ (f.size / 1024)|round|int }} КБ</td><td>{{ f.created_at|dt }}</td></tr>
+    {% else %}<tr><td class="muted">Файлов нет</td></tr>{% endfor %}
+  </table></div>
+  {% if w %}<form method="post" action="/deals/{{ deal.id }}/files" enctype="multipart/form-data" class="inline">
+    <input type="hidden" name="csrf" value="{{ csrf(request) }}"><input type="file" name="file" required><button>Загрузить</button>
+  </form>{% endif %}
+
+  <h2>Запросы поставщикам</h2>
+  <div class="tbl"><table>
+    {% for r, s in requests %}
+    <tr>
+      <td>{{ s.name }}<br><span class="muted small">{{ r.position }}</span></td>
+      <td>{{ r.status }}</td>
+      <td>
+        {% if s.email %}<a href="mailto:{{ s.email }}?subject={{ ('Запрос КП: ' ~ deal.title)|urlencode }}&body={{ r.body|urlencode }}">Открыть в почте</a>{% endif %}
+        {% if w %}<form method="post" action="/supplier-requests/{{ r.id }}/status" class="inline">
+          <input type="hidden" name="csrf" value="{{ csrf(request) }}">
+          <select name="status">{% for st in ['draft','approved','sent','answered'] %}<option {{ 'selected' if r.status == st else '' }}>{{ st }}</option>{% endfor %}</select><button>OK</button>
+        </form>{% endif %}
+      </td>
+    </tr>
+    <tr><td colspan="3"><pre>{{ r.body }}</pre></td></tr>
+    {% else %}<tr><td class="muted">Запросов нет</td></tr>{% endfor %}
+  </table></div>
+  {% if w %}<form method="post" action="/deals/{{ deal.id }}/supplier-requests" class="card form">
+    <input type="hidden" name="csrf" value="{{ csrf(request) }}">
+    <label>Поставщик<select name="supplier_id">{% for s in suppliers %}<option value="{{ s.id }}">{{ s.name }}</option>{% endfor %}</select></label>
+    <label>Позиция<textarea name="position" rows="2" required></textarea></label>
+    <button {% if not suppliers %}disabled{% endif %}>Подготовить запрос (черновик)</button>
+  </form>{% endif %}
+</section>
+
+<section>
+  <h2>Коммуникации</h2>
+  {% if w %}<form method="post" action="/deals/{{ deal.id }}/note" class="card form">
+    <input type="hidden" name="csrf" value="{{ csrf(request) }}">
+    <select name="kind"><option value="note">Заметка</option><option value="call">Звонок</option><option value="email">Письмо</option><option value="meeting">Встреча</option></select>
+    <textarea name="body" rows="3" required placeholder="Что обсудили, о чём договорились"></textarea><button>Записать</button>
+  </form>{% endif %}
+  <ul class="timeline">
+    {% for n in notes %}
+    <li class="{{ n.direction }}">
+      <div class="meta">{{ n.created_at|dt }} · {{ n.channel or n.kind }}{% if n.direction == 'in' %} · входящее{% elif n.direction == 'out' %} · исходящее{% endif %}{% if n.duration_sec %} · {{ n.duration_sec }} с{% endif %}</div>
+      <div class="body">{{ n.body }}</div>{% if n.recording_url %}<a href="{{ n.recording_url }}" rel="noopener noreferrer">Запись разговора</a>{% endif %}
+    </li>
+    {% else %}<li class="muted">Записей нет</li>{% endfor %}
+  </ul>
+  <h2>Контакты клиента</h2>
+  <ul>{% for c in contacts %}<li>{{ c.name }} {{ c.phone }} {{ c.email }} {{ c.telegram }}</li>{% else %}<li class="muted">—</li>{% endfor %}</ul>
+</section>
+</div>
+{% endblock %}

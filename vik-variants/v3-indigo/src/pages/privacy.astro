@@ -1,0 +1,18 @@
+---
+import Base from '../layouts/Base.astro';
+import { privacy } from '../content.mjs';
+---
+<Base title={privacy.title} description={privacy.description} path="/privacy/" noindex>
+  <section class="page-hero">
+    <div class="container narrow-l">
+      <h1>{privacy.h1}</h1>
+      <div class="statusbox">
+        <p><strong>{privacy.draftNote}</strong></p>
+        <ul class="tick-list">{privacy.openItems.map((x) => <li>{x}</li>)}</ul>
+      </div>
+      {privacy.sections.map((s) => (
+        <div class="group"><h2>{s.h}</h2>{s.p.map((t) => <p class="muted">{t}</p>)}</div>
+      ))}
+    </div>
+  </section>
+</Base>

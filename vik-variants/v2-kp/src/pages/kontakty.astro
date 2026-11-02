@@ -1,0 +1,23 @@
+---
+import Base from '../layouts/Base.astro';
+import PageHero from '../components/PageHero.astro';
+import Steps from '../components/Steps.astro';
+import IntakeForm from '../components/IntakeForm.astro';
+import { contacts, form, documents, footer } from '../content.mjs';
+import { ui } from '../ui.mjs';
+const phone = (documents.requisites.find(([k]) => k === 'Телефон') ?? [])[1] ?? '';
+const tel = phone.replace(/[^\d+]/g, '');
+---
+<Base title={contacts.title} description={contacts.description} path="/kontakty/" crumbs={[{ name: ui.home, href: '/' }, { name: ui.nav.contacts, href: '/kontakty/' }]}>
+  <PageHero crumbs={[{ name: ui.nav.contacts }]} title={contacts.h1} lead={contacts.lead} hl="75%">
+    {phone && <p class="contact-phone"><span class="mono">{footer.contacts.phone}</span><a href={`tel:${tel}`}>{phone}</a></p>}
+  </PageHero>
+  <section class="block contact-map-sec">
+    <div class="container">
+      <p class="eyebrow">{ui.contactsMap}</p>
+      <h2 class="block-title">{contacts.how.title}</h2>
+      <Steps items={contacts.how.steps} variant="contact" endLabel={form.contactsTitle} />
+    </div>
+  </section>
+  <IntakeForm title={form.contactsTitle} />
+</Base>

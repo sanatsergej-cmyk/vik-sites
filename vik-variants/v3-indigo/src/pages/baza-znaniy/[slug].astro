@@ -1,0 +1,115 @@
+---
+// Лонгрид базы знаний: липкое оглавление (десктоп) / сворачиваемое (мобильный), прогресс чтения,
+// разделы с выносками-списками, цитата-выноска, FAQ, связанные услуги/направления, CTA на форму.
+import Base from '../../layouts/Base.astro';
+import Intake from '../../components/Intake.astro';
+import { articles, knowledgeBase, serviceByPath, directionByPath, cta, brand } from '../../content.mjs';
+import { ui } from '../../ui.mjs';
+
+export function getStaticPaths() {
+  return articles.map((a, i) => ({ params: { slug: a.slug }, props: { a, next: articles[(i + 1) % articles.length] } }));
+}
+const { a, next } = Astro.props;
+const path = `/baza-znaniy/${a.slug}/`;
+const pad = (i) => String(i + 1).padStart(2, '0');
+const fmt = (d) => d.split('-').reverse().join('.');
+const rel = (a.related ?? [])
+  .map((r) => {
+    const s = serviceByPath(r);
+    if (s) return { href: r, label: s.label, lead: s.cardLead, kind: ui.nav.services };
+    const d = directionByPath(r);
+    return d ? { href: r, label: d.label, lead: d.cardLead, kind: ui.nav.directions } : null;
+  })
+  .filter(Boolean);
+// Цитата-выноска: первое предложение из середины статьи (дублирует текст раздела, поэтому скрыта от скринридеров)
+let qi = -1;
+let quote = '';
+for (let i = Math.min(2, a.sections.length - 1); i < a.sections.length && !quote; i++) {
+  const sent = a.sections[i].p.flatMap((t) => t.split(/(?<=[.!?])\s/));
+  const hit = sent.find((t) => t.length >= 70 && t.length <= 220 && !/[:]$/.test(t.trim()));
+  if (hit) { quote = hit; qi = i; }
+}
+const ld = [
+  {
+    '@context': 'https://schema.org', '@type': 'Article', headline: a.h1, description: a.description,
+    dateModified: a.updated, datePublished: a.updated, inLanguage: 'ru', author: { '@type': 'Organization', name: brand.name }, publisher: { '@type': 'Organization', name: brand.name },
+  },
+  {
+    '@context': 'https://schema.org', '@type': 'FAQPage',
+    mainEntity: a.faq.map((f) => ({ '@type': 'Question', name: f.q, acceptedAnswer: { '@type': 'Answer', text: f.a } })),
+  },
+];
+---
+<Base
+  title={a.title}
+  description={a.description}
+  path={path}
+  crumbs={[{ name: ui.home, href: '/' }, { name: knowledgeBase.h1, href: '/baza-znaniy/' }, { name: a.h1, href: path }]}
+>
+  <script slot="head" type="application/ld+json" set:html={JSON.stringify(ld)} />
+  <div class="read-progress" aria-hidden="true"><span></span></div>
+
+  <section class="page-hero art-hero">
+    <div class="container">
+      <p class="crumbs"><a href="/">{ui.home}</a> <span aria-hidden="true">/</span> <a href="/baza-znaniy/">{knowledgeBase.h1}</a></p>
+      <p class="art-meta mono"><span>{a.readMin} {ui.kb.min}</span><span>{ui.kb.updated} <time datetime={a.updated}>{fmt(a.updated)}</time></span><span>{a.sections.length} {ui.kb.sections}</span></p>
+      <h1>{a.h1}</h1>
+      <p class="lead art-lead">{a.lead}</p>
+    </div>
+  </section>
+
+  <div class="container art-grid">
+    <aside class="toc">
+      <nav class="toc-desk" aria-label={ui.kb.toc}>
+        <p class="mono-label">{ui.kb.toc}</p>
+        <ol>{a.sections.map((x, i) => <li><a href={`#s-${i + 1}`} data-toc={`s-${i + 1}`}><span class="mono">{pad(i)}</span>{x.h}</a></li>)}</ol>
+        <a class="toc-faq" href="#faq">{ui.kb.faq}</a>
+      </nav>
+      <details class="toc-mob">
+        <summary><span class="mono-label">{ui.kb.toc}</span><span class="mono small">{a.sections.length}</span></summary>
+        <ol>{a.sections.map((x, i) => <li><a href={`#s-${i + 1}`}><span class="mono">{pad(i)}</span>{x.h}</a></li>)}</ol>
+      </details>
+    </aside>
+
+    <article class="art">
+      {a.sections.map((x, i) => (
+        <>
+          <section class="art-sec" id={`s-${i + 1}`}>
+            <h2><span class="mono">{pad(i)}</span>{x.h}</h2>
+            {x.p.map((t) => <p>{t}</p>)}
+            {x.list && <div class="art-callout"><ul class="tick-list">{x.list.map((t) => <li>{t}</li>)}</ul></div>}
+          </section>
+          {i === qi && quote && <blockquote class="art-quote" aria-hidden="true"><p>{quote}</p></blockquote>}
+        </>
+      ))}
+
+      <section class="art-sec" id="faq">
+        <h2>{ui.kb.faq}</h2>
+        {a.faq.map((f) => <details class="q"><summary>{f.q}</summary><p>{f.a}</p></details>)}
+      </section>
+
+      {rel.length > 0 && (
+        <section class="art-sec">
+          <h2>{ui.kb.related}</h2>
+          <div class="spec">
+            {rel.map((o, i) => (
+              <a class="spec-row" href={o.href}>
+                <span class="mono spec-n">{pad(i)}</span>
+                <span class="spec-body"><strong>{o.label}</strong><small>{o.lead}</small></span>
+                <span class="spec-arr" aria-hidden="true">→</span>
+              </a>
+            ))}
+          </div>
+        </section>
+      )}
+
+      <div class="art-cta">
+        <p class="mono-label">{brand.name}</p>
+        <a class="btn btn-primary" href="#intake">{cta.primary}<span aria-hidden="true">→</span></a>
+        <a class="link-arrow art-next" href={`/baza-znaniy/${next.slug}/`}><small class="mono">{ui.kb.next}</small> {next.h1}<span aria-hidden="true">→</span></a>
+      </div>
+    </article>
+  </div>
+
+  <Intake />
+</Base>

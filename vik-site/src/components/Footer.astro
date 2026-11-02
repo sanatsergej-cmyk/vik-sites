@@ -1,0 +1,54 @@
+---
+import { nav, footer, brand, principles } from '../content/index.mjs';
+const c = footer.contacts;
+---
+<footer class="site-footer">
+  <div class="footer-marble" aria-hidden="true"></div>
+  <div class="container footer-top">
+    <div class="footer-brand">
+      <span class="footer-word" aria-hidden="true">ВиК</span>
+      <p class="footer-tag">{brand.tagline}</p>
+      <ul class="footer-principles">{principles.map((p) => <li>{p}</li>)}</ul>
+    </div>
+    <ul class="contacts">
+      <li><span class="k">{c.phone}</span><a href="tel:+79916663572">+7 991 666-35-72</a></li>
+      <li><span class="k">{c.email}</span><span data-placeholder>{c.pendingEmail}</span></li>
+      <li><span class="k">{c.telegram}</span><span data-placeholder>{c.pendingContact}</span></li>
+      <li><span class="k">{c.address}</span><span data-placeholder>{c.pendingAddress}</span></li>
+    </ul>
+  </div>
+  <div class="container footer-grid">
+    <div>
+      <h3>Направления</h3>
+      <ul>{nav.directions.map((l) => <li><a href={l.href}>{l.label}</a></li>)}</ul>
+    </div>
+    <div>
+      <h3>Услуги</h3>
+      <ul>{[...nav.services, ...nav.extras].map((l) => <li><a href={l.href}>{l.label}</a></li>)}</ul>
+    </div>
+    <div>
+      <h3>Работы</h3>
+      <ul>{nav.works.map((l) => <li><a href={l.href}>{l.label}</a></li>)}</ul>
+    </div>
+    <div>
+      <h3><a href={nav.knowledge.href}>{nav.knowledge.label}</a></h3>
+      <ul>{nav.articles.map((l) => <li><a href={l.href}>{l.label}</a></li>)}</ul>
+    </div>
+    <div>
+      <h3>Компания</h3>
+      <ul>
+        <li><a href="/o-kompanii/">О компании</a></li>
+        <li><a href="/proekty/">Проекты</a></li>
+        <li><a href="/dokumenty/">Документы и реквизиты</a></li>
+        <li><a href="/kontakty/">Контакты</a></li>
+        <li><a href="/privacy/">Политика обработки данных</a></li>
+        <li><a href="/consent/">Согласие на обработку данных</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="container footer-bottom">
+    <p>{footer.about}</p>
+    <p>{footer.copyright}</p>
+    <p>{footer.disclaimer}</p>
+  </div>
+</footer>

@@ -1,0 +1,52 @@
+---
+// Интро главной: эмблема собирается из частей, появляются «ВиК» и слоган, затем эмблема улетает
+// на своё место в первом экране. Оверлей поверх уже отрисованной страницы (контент в DOM, поисковик его видит).
+// Показ: один раз за сессию (sessionStorage 'vik-intro'), только с JS и без prefers-reduced-motion,
+// не при переходе по якорю. Решение принимает скрипт в <head> (Base.astro): ставит html.intro-on.
+// Без класса intro-on оверлей display:none. Пропуск — клик, касание, колесо или любая клавиша. Длительность ≤ 2 с.
+import EmblemVector from './EmblemVector.astro';
+import { brand } from '../content/index.mjs';
+---
+<div class="intro" id="intro" aria-hidden="true">
+  <div class="intro-stage">
+    <div class="intro-emblem"><EmblemVector idp="in" /></div>
+    <div class="intro-word">{brand.name}</div>
+    <p class="intro-tag">{brand.tagline}</p>
+  </div>
+  <span class="intro-skip">Пропустить</span>
+</div>
+<script is:inline>
+(function () {
+  var d = document.documentElement, el = document.getElementById('intro');
+  if (!el) return;
+  if (!d.classList.contains('intro-on')) { el.remove(); return; }
+  try { sessionStorage.setItem('vik-intro', '1'); } catch (e) {}
+  var EV = ['pointerdown', 'keydown', 'wheel', 'touchstart'];
+  // отсчёт — с первого кадра (CSS-анимации сборки стартуют с первой отрисовки, а не с выполнения скрипта)
+  var done = false, timer = 0;
+  requestAnimationFrame(function () { if (!done) timer = setTimeout(function () { leave(false); }, 1200); });
+  function skip() { leave(true); }
+  EV.forEach(function (t) { window.addEventListener(t, skip, { capture: true, passive: true }); });
+  function finish() { el.remove(); d.classList.remove('intro-out'); }
+  function leave(fast) {
+    if (done) return; done = true; clearTimeout(timer);
+    EV.forEach(function (t) { window.removeEventListener(t, skip, true); });
+    d.classList.remove('intro-on');
+    if (fast) { d.classList.remove('intro-out'); el.classList.add('is-skip'); setTimeout(finish, 320); return; }
+    d.classList.add('intro-out');
+    // перелёт эмблемы на место растровой эмблемы первого экрана (совмещаем треугольники)
+    var em = el.querySelector('.intro-emblem');
+    var img = document.querySelector('.hero-emblem .emblem img');
+    var b = img && img.getBoundingClientRect(), a = em.getBoundingClientRect();
+    if (b && b.width && b.bottom > 0 && b.top < window.innerHeight) {
+      var s = (b.width * 0.887) / (a.width * 0.8667);
+      var dx = b.left + b.width * 0.481 - (a.left + a.width * 0.5);
+      var dy = b.top + b.height * 0.495 - (a.top + a.height * 0.4976);
+      em.style.transform = 'translate(' + dx.toFixed(1) + 'px,' + dy.toFixed(1) + 'px) scale(' + s.toFixed(3) + ')';
+    }
+    el.classList.add('is-leaving');
+    setTimeout(function () { el.classList.add('is-landed'); d.classList.remove('intro-out'); }, 420);
+    setTimeout(finish, 760);
+  }
+})();
+</script>

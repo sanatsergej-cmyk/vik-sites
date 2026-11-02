@@ -1,0 +1,119 @@
+---
+import Base from '../layouts/Base.astro';
+import Icon from '../components/Icon.astro';
+import Pic from '../components/Pic.astro';
+import IntakeForm from '../components/IntakeForm.astro';
+import { about, riskPoints, home, glossary, brand, principles, mission, route } from '../content/index.mjs';
+import EmblemVector from '../components/EmblemVector.astro';
+const seam = riskPoints[riskPoints.length - 1];
+const pad = (i: number) => String(i + 1).padStart(2, '0');
+const audIcons = ['building', 'clipboard', 'helmet', 'factory'];
+---
+<Base
+  title={about.title}
+  description={about.description}
+  path="/o-kompanii/"
+  crumbs={[{ name: 'Главная', href: '/' }, { name: 'О компании', href: '/o-kompanii/' }]}
+>
+  <section class="page-hero">
+    <div class="container ph-grid">
+      <div>
+        <p class="crumbs"><a href="/">Главная</a><span class="sep"></span>О компании</p>
+        <p class="eyebrow">{brand.tagline}</p>
+        <h1>{about.h1}</h1>
+        <p class="lead">{about.lead}</p>
+      </div>
+      <div class="ph-art about-emblem">
+        <Pic class="emblem-sm" base="/brand/emblem-cut" ext="png" alt="Эмблема ВиК" width={825} height={575} loading="eager" />
+      </div>
+    </div>
+  </section>
+
+  <section class="section principles-sec">
+    <div class="container">
+      <p class="eyebrow">Принципы</p>
+      <ol class="big-principles">{principles.map((p, i) => <li data-reveal style={`--i:${i}`}><span>{pad(i)}</span>{p}</li>)}</ol>
+    </div>
+  </section>
+
+  <section class="section seams-sec">
+    <div class="container">
+      <div class="section-head split" data-reveal><div><p class="eyebrow">Подход</p><h2>{seam.t}</h2></div><p>{seam.d}</p></div>
+      <div class="seams" data-reveal>
+        <div class="seam-row seam-row--broken">
+          <span class="seam-k">Стыки</span>
+          <ol>{route.map((r) => <li><span class="sr-dot"></span>{r.t}</li>)}</ol>
+        </div>
+        <div class="seam-row seam-row--one">
+          <span class="seam-k">Один процесс</span>
+          <ol>{route.map((r) => <li><span class="sr-dot"></span>{r.t}</li>)}</ol>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="mission mission--about" data-parallax data-parallax-center>
+    <div class="mission-marble" data-depth="0.12" aria-hidden="true"></div>
+    <div class="container mission-inner" data-reveal>
+      <div class="mission-mark"><EmblemVector idp="ab" /></div>
+      <p class="eyebrow">{mission.title}</p>
+      <p class="mission-text">{mission.text}</p>
+      <p class="mission-note">{home.missionNote}</p>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container two">
+      <div data-reveal>
+        <p class="eyebrow">Риски</p>
+        <h2>Чем мы снижаем риск заказчика</h2>
+        <ol class="risk-list compact">
+          {riskPoints.map((r, i) => <li><span class="risk-n">{pad(i)}</span><div><h3>{r.t}</h3><p>{r.d}</p></div></li>)}
+        </ol>
+      </div>
+      <div data-reveal style="--i:1">
+        <p class="eyebrow">Принципы</p>
+        <h2>{about.how.title}</h2>
+        <ol class="risk-list compact">
+          {about.how.items.map((r, i) => <li><span class="risk-n">{pad(i)}</span><div><h3>{r.t}</h3><p>{r.d}</p></div></li>)}
+        </ol>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container two">
+      <div class="bezel panel" data-reveal><div class="bezel-core"><span class="aud-ico"><Icon name="network" size={26} /></span><h2>{about.partners.title}</h2><p style="margin:0">{about.partners.text}</p></div></div>
+      <div class="bezel panel" data-reveal style="--i:1"><div class="bezel-core"><span class="aud-ico"><Icon name="pin" size={26} /></span><h2>{about.geography.title}</h2><p style="margin:0">{about.geography.text}</p></div></div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container">
+      <div class="section-head" data-reveal><p class="eyebrow">Заказчики</p><h2>{home.audiences.title}</h2></div>
+      <div class="aud-grid">
+        {home.audiences.items.map((a, i) => (
+          <div class="bezel aud" data-reveal style={`--i:${i}`}><div class="bezel-core"><span class="aud-ico"><Icon name={audIcons[i] ?? 'building'} size={28} /></span><h3>{a.t}</h3><p>{a.d}</p></div></div>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container two faq-wrap">
+      <div data-reveal><p class="eyebrow">Словарь</p><h2>Сокращения</h2></div>
+      <dl class="gloss" data-reveal>{glossary.map((g) => <><dt>{g.t}</dt><dd>{g.d}</dd></>)}</dl>
+    </div>
+  </section>
+
+  <section class="section company-sec">
+    <div class="container">
+      <div class="statusbox" data-reveal>
+        <span class="aud-ico"><Icon name="shield" size={26} /></span>
+        <div><h3>{about.team.title}</h3><p>{about.team.text}</p></div>
+        <a class="btn btn-ghost btn-sm" href="/dokumenty/">Документы и реквизиты</a>
+      </div>
+    </div>
+  </section>
+  <IntakeForm />
+</Base>

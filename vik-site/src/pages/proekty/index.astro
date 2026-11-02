@@ -1,0 +1,66 @@
+---
+import Base from '../../layouts/Base.astro';
+import Icon from '../../components/Icon.astro';
+import IntakeForm from '../../components/IntakeForm.astro';
+import { projects, cases, cta, route } from '../../content/index.mjs';
+const has = cases.length > 0;
+---
+<Base
+  title={projects.title}
+  description={projects.description}
+  path="/proekty/"
+  noindex={!has}
+  crumbs={[{ name: 'Главная', href: '/' }, { name: 'Проекты', href: '/proekty/' }]}
+>
+  <section class="page-hero">
+    <div class="container">
+      <p class="crumbs"><a href="/">Главная</a><span class="sep"></span>Проекты</p>
+      <p class="eyebrow">Портфолио</p>
+      <h1>{projects.h1}</h1>
+      <p class="lead">{projects.lead}</p>
+    </div>
+  </section>
+  {!has && (
+    <section class="section">
+      <div class="container">
+        <div class="empty" data-reveal>
+          <div>
+            <p class="eyebrow">Раздел наполняется</p>
+            <p>{projects.empty}</p>
+          </div>
+          <a class="btn btn-gold" href="#intake"><span>{cta.similar}</span><span class="btn-ico"><Icon name="arrow" size={16} /></span></a>
+        </div>
+        <div class="skel-grid" aria-hidden="true">
+          {['Объект', 'Роль компании', 'Системы', 'Документы'].map((k, i) => (
+            <div class="skel" style={`--i:${i}`}><span class="skel-k">{k}</span><span class="skel-l"></span><span class="skel-l skel-l--s"></span></div>
+          ))}
+        </div>
+        <ol class="steps-h" style="margin-top:56px">
+          {route.map((r) => (
+            <li data-step><span class="rs-node"><span>{r.n}</span></span><div class="rs-body"><strong>{r.t}</strong><p>{r.d}</p></div></li>
+          ))}
+        </ol>
+      </div>
+    </section>
+  )}
+  {has && (
+    <section class="section">
+      <div class="container">
+        <div class="works">
+          {cases.map((c, i) => (
+            <a class="bezel work" href={`/proekty/${c.slug}/`} data-reveal style={`--i:${i}`}>
+              <span class="bezel-core">
+                <span class="work-top"><span class="work-ico"><Icon name="building" size={30} /></span><span class="work-n">{String(i + 1).padStart(2, '0')}</span></span>
+                <span class="work-title">{c.title}</span>
+                <span class="work-lead">{c.object}</span>
+                <span class="work-lead">Роль компании: {c.role}</span>
+                <span class="link-go">Подробнее <span class="btn-ico"><Icon name="arrow" size={14} /></span></span>
+              </span>
+            </a>
+          ))}
+        </div>
+      </div>
+    </section>
+  )}
+  <IntakeForm title={cta.similar} />
+</Base>

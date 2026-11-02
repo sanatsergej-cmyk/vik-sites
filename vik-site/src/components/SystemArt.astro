@@ -1,0 +1,134 @@
+---
+// Золотые line-art схемы систем (волна 2): у каждого направления своя тема.
+// Вода — разрез трассы: сеть, колодец, ввод, водомерный узел. Тепло — подающая и обратная, камера, компенсатор, ИТП.
+// Электро — однолинейная схема ТП → КЛ → ВРУ. Вентиляция — воздуховод через этажи от венткамеры.
+// Газ — трасса от точки подключения до объекта (без давлений и пунктов редуцирования).
+// Рисуется при появлении, в трубах «течёт» поток. Декоративный слой, aria-hidden.
+const { slug, class: cls = '' } = Astro.props;
+const hatch = (y: number, from = 0, to = 480) =>
+  Array.from({ length: Math.floor((to - from) / 16) }, (_, i) => `M${from + i * 16} ${y + 9}l9 -9`).join('');
+---
+<svg class:list={['sa', `sa--${slug}`, cls]} viewBox="0 0 480 320" fill="none" aria-hidden="true" data-reveal>
+  <defs>
+    <pattern id={`sa-grid-${slug}`} width="24" height="24" patternUnits="userSpaceOnUse">
+      <path d="M24 0H0V24" stroke="currentColor" stroke-opacity=".07" stroke-width="1" />
+    </pattern>
+  </defs>
+  <rect width="480" height="320" fill={`url(#sa-grid-${slug})`} />
+
+  {slug === 'vodosnabzhenie' && (
+    <g>
+      <path class="sa-base" d="M0 110H480" />
+      <path class="sa-hatch" d={hatch(110, 0, 330)} />
+      <!-- здание с подвалом -->
+      <path class="sa-draw" pathLength="1" d="M330 110V24h126v86M330 110v96h126v-96M346 44h22M346 66h22M418 44h22M418 66h22" />
+      <!-- городская сеть в разрезе -->
+      <circle class="sa-draw" pathLength="1" cx="36" cy="232" r="18" />
+      <circle class="sa-dot" cx="36" cy="232" r="5" />
+      <!-- колодец -->
+      <path class="sa-draw" pathLength="1" d="M128 110v150h52V110M122 106h64M140 260h28" />
+      <path class="sa-draw sa-faint" pathLength="1" d="M134 128h40M134 146h40" />
+      <!-- ввод и водомерный узел -->
+      <path class="sa-pipe" d="M54 232H330V172H452" />
+      <path class="sa-flow" d="M54 232H330V172H452" />
+      <path class="sa-line" d="M146 224l8 8-8 8zM162 224l-8 8 8 8z" />
+      <path class="sa-line" d="M360 164l9 8-9 8zM378 164l-9 8 9 8z" />
+      <circle class="sa-line" cx="400" cy="172" r="10" />
+      <path class="sa-line" d="M400 166v6l4 3" />
+      <path class="sa-line" d="M422 164l9 8-9 8zM440 164l-9 8 9 8z" />
+      <text class="sa-label" x="14" y="276">Сеть</text>
+      <text class="sa-label" x="120" y="94">Колодец</text>
+      <text class="sa-label" x="200" y="254">Ввод</text>
+      <text class="sa-label" x="342" y="200">Водомерный узел</text>
+    </g>
+  )}
+
+  {slug === 'teplosnabzhenie' && (
+    <g>
+      <path class="sa-base" d="M0 100H320" />
+      <path class="sa-hatch" d={hatch(100, 0, 320)} />
+      <path class="sa-draw" pathLength="1" d="M320 30V290M320 30h140v260" />
+      <!-- камера -->
+      <path class="sa-draw" pathLength="1" d="M84 100v150h62V100" />
+      <!-- подающая (горячая) и обратная (холодная) с П-образным компенсатором -->
+      <path class="sa-pipe sa-hot" d="M0 180H190V124H246V180H348" />
+      <path class="sa-flow sa-hot" d="M0 180H190V124H246V180H348" />
+      <path class="sa-pipe sa-cold" d="M348 216H234V146H202V216H0" />
+      <path class="sa-flow sa-cold" d="M348 216H234V146H202V216H0" />
+      <!-- ИТП -->
+      <rect class="sa-draw" pathLength="1" x="348" y="150" width="92" height="96" rx="4" />
+      <path class="sa-line" d="M366 166v64M378 166v64M390 166v64M402 166v64" />
+      <circle class="sa-line" cx="424" cy="198" r="9" />
+      <path class="sa-line sa-spin" style="transform-origin:424px 198px" d="M424 191v14M417 198h14" />
+      <text class="sa-label sa-hot-t" x="10" y="170">Подающая</text>
+      <text class="sa-label sa-cold-t" x="10" y="238">Обратная</text>
+      <text class="sa-label" x="88" y="270">Камера</text>
+      <text class="sa-label" x="374" y="266">ИТП</text>
+    </g>
+  )}
+
+  {slug === 'elektrosnabzhenie' && (
+    <g>
+      <path class="sa-base sa-faint" d="M0 238H480" />
+      <path class="sa-hatch" d={hatch(238)} />
+      <!-- ТП -->
+      <rect class="sa-draw" pathLength="1" x="24" y="86" width="96" height="104" rx="4" />
+      <circle class="sa-line" cx="62" cy="138" r="16" />
+      <circle class="sa-line" cx="82" cy="138" r="16" />
+      <!-- кабельная линия в земле с муфтами -->
+      <path class="sa-pipe sa-pipe--thin" d="M120 138H150V266H330V138H360" />
+      <path class="sa-flow sa-flow--fast" d="M120 138H150V266H330V138H360" />
+      <rect class="sa-line" x="204" y="258" width="22" height="16" rx="3" />
+      <rect class="sa-line" x="266" y="258" width="22" height="16" rx="3" />
+      <!-- ВРУ -->
+      <rect class="sa-draw" pathLength="1" x="360" y="86" width="96" height="104" rx="4" />
+      <path class="sa-line" d="M380 108h56M380 128h56M380 148h56M380 168h56" />
+      <path class="sa-line" d="M396 102v12M416 122v12M396 142v12M424 162v12" />
+      <text class="sa-label" x="58" y="76">ТП</text>
+      <text class="sa-label" x="226" y="296">КЛ · муфты</text>
+      <text class="sa-label" x="388" y="76">ВРУ</text>
+    </g>
+  )}
+
+  {slug === 'ventilyatsiya' && (
+    <g>
+      <path class="sa-draw" pathLength="1" d="M60 300V40L240 14 420 40V300M60 120H420M60 204H420M40 300H440" />
+      <!-- венткамера внизу -->
+      <rect class="sa-draw" pathLength="1" x="80" y="226" width="130" height="60" rx="4" />
+      <circle class="sa-line" cx="120" cy="256" r="18" />
+      <path class="sa-line sa-spin" style="transform-origin:120px 256px" d="M120 238c8 6 8 12 0 18M138 256c-6 8-12 8-18 0M120 274c-8-6-8-12 0-18M102 256c6-8 12-8 18 0" />
+      <!-- воздуховод через этажи -->
+      <path class="sa-pipe" d="M210 256H352V24" />
+      <path class="sa-flow" d="M210 256H352V24" />
+      <path class="sa-pipe sa-pipe--thin" d="M352 166H252M352 84H252" />
+      <path class="sa-flow sa-flow--soft" d="M352 166H252M352 84H252" />
+      <path class="sa-line" d="M244 158v16M236 158v16M244 76v16M236 76v16" />
+      <path class="sa-line" d="M340 24h24M344 16h16" />
+      <text class="sa-label" x="88" y="218">Венткамера</text>
+      <text class="sa-label" x="364" y="140">Воздуховод</text>
+      <text class="sa-label" x="76" y="100">3</text>
+      <text class="sa-label" x="76" y="184">2</text>
+      <text class="sa-label" x="230" y="296">1</text>
+    </g>
+  )}
+
+  {slug === 'gazosnabzhenie' && (
+    <g>
+      <path class="sa-base" d="M0 150H480" />
+      <path class="sa-hatch" d={hatch(150, 0, 360)} />
+      <path class="sa-draw" pathLength="1" d="M360 150V40h104v110M376 62h20M376 88h20M428 62h20M428 88h20" />
+      <!-- точка подключения -->
+      <circle class="sa-draw" pathLength="1" cx="44" cy="222" r="16" />
+      <circle class="sa-dot" cx="44" cy="222" r="5" />
+      <path class="sa-line" d="M44 150v-36M30 100a14 14 0 1 1 28 0c0 10-14 18-14 18S30 110 30 100z" />
+      <!-- трасса -->
+      <path class="sa-pipe sa-pipe--thin" d="M60 222H330Q344 222 344 208V114H360" />
+      <path class="sa-flow" d="M60 222H330Q344 222 344 208V114H360" />
+      <path class="sa-line sa-dash" d="M60 238H330" />
+      <path class="sa-line" d="M336 128l8-8 8 8zM336 100l8 8 8-8z" />
+      <text class="sa-label" x="12" y="264">Точка подключения</text>
+      <text class="sa-label" x="160" y="212">Трасса</text>
+      <text class="sa-label" x="392" y="134">Объект</text>
+    </g>
+  )}
+</svg>

@@ -1,0 +1,143 @@
+---
+import Base from '../../layouts/Base.astro';
+import PageHero from '../../components/PageHero.astro';
+import Route from '../../components/Route.astro';
+import Faq from '../../components/Faq.astro';
+import Cards from '../../components/Cards.astro';
+import Icon from '../../components/Icon.astro';
+import Pic from '../../components/Pic.astro';
+import Signature from '../../components/Signature.astro';
+import IntakeForm from '../../components/IntakeForm.astro';
+import { directions, services, serviceByPath, cta } from '../../content.mjs';
+import { ui } from '../../ui.mjs';
+
+export function getStaticPaths() {
+  return services.map((s) => ({ params: { slug: s.slug }, props: { s } }));
+}
+const { s } = Astro.props;
+const path = `/uslugi/${s.slug}/`;
+const related = s.related.map((r) => serviceByPath(r)).filter(Boolean);
+const groupLabel = s.group === 'main' ? ui.nav.services : s.group === 'extra' ? ui.extrasLabel : ui.nav.works;
+const groupHref = s.group === 'main' ? '/#uslugi' : s.group === 'extra' ? undefined : '/#raboty';
+// Блоки, которые фирменная визуализация уже показывает (чтобы не дублировать на странице).
+const hideSteps = ['design', 'rso', 'smr', 'connection'].includes(s.id);
+const hideScope = ['design', 'handover'].includes(s.id);
+const hideExtra = ['rso'].includes(s.id);
+const isTz = s.id === 'technical-customer';
+// Оглавление справа в шапке: названия групп состава работ, а если группа одна — её пункты.
+const groups = s.scopeGroups ?? [];
+const scopeIdx = groups.length > 1 ? groups.map((g) => g.title) : (groups[0]?.items ?? []).slice(0, 6);
+---
+<Base title={s.title} description={s.description} path={path} crumbs={[{ name: ui.home, href: '/' }, { name: s.label, href: path }]}>
+  <PageHero crumbs={[{ name: groupLabel, href: groupHref }, { name: s.label }]} eyebrow={s.eyebrow} title={s.h1} lead={s.lead} ctaHref={`?service=${s.id}#intake`} ctaLabel={cta.primary} hl="45%">
+    {isTz && (
+      <Fragment slot="media">
+        <Pic src="/img/itp-render.jpg" alt={ui.renderAlt} width={928} height={970} loading="eager" />
+        <span class="media-tag mono">{ui.illustration}</span>
+      </Fragment>
+    )}
+    {!isTz && scopeIdx.length > 0 && (
+      <Fragment slot="aside">
+        <p class="pha-label mono">{ui.scopeIndex}</p>
+        <ol class="pha-list">
+          {scopeIdx.map((t, i) => <li><span class="mono">{String(i + 1).padStart(2, '0')}</span>{t}</li>)}
+        </ol>
+      </Fragment>
+    )}
+  </PageHero>
+
+  <section class={`block sig-sec sig-sec-${s.id}`}>
+    <div class="container">
+      <Signature s={s} />
+    </div>
+  </section>
+
+  <section class="block">
+    <div class="container cols-3-9">
+      <h2 class="block-title">{ui.svc.situations}</h2>
+      <ul class="list rv">{s.situations.map((x) => <li>{x}</li>)}</ul>
+    </div>
+  </section>
+
+  <section class="block">
+    <div class={`container ${hideScope ? 'cols-solo' : 'cols'}`}>
+      {!hideScope && <div class="rv">
+        <h2 class="block-title">{ui.svc.scope}</h2>
+        {s.scopeGroups.map((g) => (
+          <div class="group">
+            <h3>{g.title}</h3>
+            <ul class="list">{g.items.map((x) => <li>{x}</li>)}</ul>
+          </div>
+        ))}
+      </div>}
+      <div class="rv">
+        <h2 class="block-title">{ui.svc.inputs}</h2>
+        <ul class="list">{s.inputs.map((x) => <li>{x}</li>)}</ul>
+        <p class="hint">{ui.dir.noDocs}</p>
+        <h2 class="block-title" style="margin-top:48px">{ui.svc.check}</h2>
+        <ul class="list">{s.check.map((x) => <li>{x}</li>)}</ul>
+      </div>
+    </div>
+  </section>
+
+  {(hideExtra ? [] : s.extra ?? []).map((x) => (
+    <section class="block">
+      <div class="container cols-3-9">
+        <h2 class="block-title">{x.title}</h2>
+        <div class="rv">
+          <ul class="list">{x.items.map((i) => <li>{i}</li>)}</ul>
+          {x.note && <p class="hint">{x.note}</p>}
+        </div>
+      </div>
+    </section>
+  ))}
+
+  {!hideSteps && (
+    <section class="block">
+      <div class="container">
+        <h2 class="block-title">{ui.svc.steps}</h2>
+        <Route items={s.steps} />
+      </div>
+    </section>
+  )}
+
+  <section class="block">
+    <div class="container cols">
+      <div class="rv">
+        <h2 class="block-title">{ui.svc.outputs}</h2>
+        <ul class="list">{s.outputs.map((x) => <li>{x}</li>)}</ul>
+      </div>
+      <div class="rv">
+        <h2 class="block-title">{ui.svc.factors}</h2>
+        <ul class="list">{s.factors.map((x) => <li>{x}</li>)}</ul>
+      </div>
+    </div>
+    <div class="container" style="margin-top:48px">
+      <p class="boundary rv"><strong>{ui.svc.boundary}.</strong> {s.boundary}</p>
+    </div>
+  </section>
+
+  <section class="block">
+    <div class="container">
+      <h2 class="block-title">{ui.svc.systems}</h2>
+      <p class="block-sub">{ui.svc.systemsText}</p>
+      <div class="chips">{directions.map((d) => <a class="chip" href={`/napravleniya/${d.slug}/?service=${s.id}`}>{d.label}<Icon name="arrow" size={16} /></a>)}</div>
+    </div>
+  </section>
+
+  <section class="block paper">
+    <div class="container">
+      <h2 class="block-title">{ui.svc.related}</h2>
+      <Cards items={related} />
+    </div>
+  </section>
+
+  <section class="block">
+    <div class="container cols-3-9">
+      <h2 class="block-title">{ui.svc.faq}</h2>
+      <Faq items={s.faq} />
+    </div>
+  </section>
+
+  <IntakeForm />
+</Base>

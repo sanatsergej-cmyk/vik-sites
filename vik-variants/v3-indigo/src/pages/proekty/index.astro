@@ -1,0 +1,53 @@
+---
+import Base from '../../layouts/Base.astro';
+import Intake from '../../components/Intake.astro';
+import { projects, cases, cta } from '../../content.mjs';
+import { ui } from '../../ui.mjs';
+const has = cases.length > 0;
+const fields = [ui.page.object, ui.page.role, ui.page.done, ui.page.approvals, ui.page.result];
+---
+<Base
+  title={projects.title}
+  description={projects.description}
+  path="/proekty/"
+  noindex={!has}
+  crumbs={[{ name: ui.home, href: '/' }, { name: ui.nav.projects, href: '/proekty/' }]}
+>
+  <section class="page-hero">
+    <div class="container proj-grid">
+      <div>
+        <p class="crumbs"><a href="/">{ui.home}</a> <span aria-hidden="true">/</span> {ui.nav.projects}</p>
+        <h1>{projects.h1}</h1>
+        <p class="lead">{projects.lead}</p>
+        {!has && <p class="muted proj-empty">{projects.empty}</p>}
+        {!has && <p><a class="btn btn-primary" href="#intake">{cta.similar}<span aria-hidden="true">→</span></a></p>}
+      </div>
+      {!has && (
+        <div class="proj-sheets" aria-hidden="true">
+          {[0, 1].map((n) => (
+            <div class:list={['proj-sheet', { back: n === 0 }]}>
+              <p class="mono-label">{ui.page.project} {String(n + 1).padStart(2, '0')} <span class="proj-stamp">{ui.page.pending}</span></p>
+              {fields.map((f, i) => (
+                <div class="proj-field"><span class="mono">{f.replace(/:$/, '')}</span><span class="proj-bar" style={`--w:${[72, 46, 88, 60, 54][i]}%`}></span></div>
+              ))}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  </section>
+  {has && (
+    <section class="section">
+      <div class="container spec spec-wide">
+        {cases.map((c, i) => (
+          <a class="spec-row" href={`/proekty/${c.slug}/`}>
+            <span class="mono spec-n">{String(i + 1).padStart(2, '0')}</span>
+            <span class="spec-body"><strong>{c.title}</strong><small>{c.object} · {ui.page.role}: {c.role}</small></span>
+            <span class="spec-arr" aria-hidden="true">→</span>
+          </a>
+        ))}
+      </div>
+    </section>
+  )}
+  <Intake title={cta.similar} />
+</Base>

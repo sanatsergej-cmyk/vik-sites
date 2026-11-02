@@ -1,0 +1,36 @@
+---
+import Base from '../layouts/Base.astro';
+import PageHero from '../components/PageHero.astro';
+import Logo from '../components/Logo.astro';
+import { documents, cta, brand } from '../content.mjs';
+import { ui } from '../ui.mjs';
+// Реквизиты как «паспорт компании». Плейсхолдеры XXXX не трогаем, только выделяем как «уточняется».
+const isPh = (v) => typeof v === 'string' && /[XХ]{3,}/.test(v);
+---
+<Base title={documents.title} description={documents.description} path="/dokumenty/" noindex hasForm={false}>
+  <PageHero crumbs={[{ name: ui.nav.documents }]} title={documents.h1} lead={documents.lead} hl="20%" />
+  <section class="block">
+    <div class="container passport-wrap">
+      <div class="passport rv">
+        <header class="pp-head">
+          <Logo size={34} href="/dokumenty/" />
+          <p class="mono">{ui.docsPassport}</p>
+        </header>
+        <dl class="pp-rows">
+          {documents.requisites.map(([k, v]) => (
+            <div class={`pp-row ${isPh(v) ? 'is-ph' : ''}`}>
+              <dt class="mono">{k}</dt>
+              <dd>{v ?? <span data-placeholder>{ui.docs.pending}</span>}{isPh(v) && <span class="pp-flag mono">{ui.docs.pending}</span>}</dd>
+            </div>
+          ))}
+        </dl>
+        <footer class="pp-foot mono" aria-hidden="true"><span>{brand.region}</span><span class="pp-seal"></span></footer>
+      </div>
+      <div class="pp-side rv">
+        <h2 class="block-title">{ui.docs.planned}</h2>
+        <ul class="checklist">{documents.planned.map((x) => <li><span class="cb" aria-hidden="true"></span>{x}</li>)}</ul>
+        <p style="margin-top:32px"><a class="btn btn-gold" href="/kontakty/#intake">{cta.qualification}</a></p>
+      </div>
+    </div>
+  </section>
+</Base>

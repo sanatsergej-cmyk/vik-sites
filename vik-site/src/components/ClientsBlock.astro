@@ -1,0 +1,23 @@
+---
+import { clients } from '../content/clients.mjs';
+const on = import.meta.env.PUBLIC_CLIENTS_BLOCK === '1';
+---
+{on && (
+  <section class="section clients-sec" id="zakazchiki">
+    <div class="container">
+      <div class="section-head split" data-reveal>
+        <div><p class="eyebrow">Заказчики и организации</p><h2>{clients.title}</h2></div>
+        <p>{clients.text}</p>
+      </div>
+      <div class="client-groups">
+        {clients.groups.map((g, i) => (
+          <div class="client-group" data-reveal style={`--i:${i}`}>
+            <h3><span>{String(i + 1).padStart(2, '0')}</span>{g.t}</h3>
+            <ul>{g.items.map((x) => <li>{x}</li>)}</ul>
+          </div>
+        ))}
+      </div>
+      <p class="note" data-placeholder>{clients.note}</p>
+    </div>
+  </section>
+)}

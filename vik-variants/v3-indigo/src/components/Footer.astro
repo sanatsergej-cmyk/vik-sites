@@ -1,0 +1,48 @@
+---
+import Emblem from './Emblem.astro';
+import { nav, footer, brand } from '../content.mjs';
+import { ui } from '../ui.mjs';
+const c = footer.contacts;
+---
+<footer class="site-footer">
+  <div class="container footer-grid">
+    <div class="footer-brand">
+      <a class="brand" href="/"><Emblem size={44} cls="brand-mark" /><span class="brand-word">{brand.name}</span></a>
+      <p class="muted">{footer.about}</p>
+      <dl class="contacts">
+        <dt>{c.phone}</dt><dd><a class="mono" href={ui.phoneHref}>{ui.phone}</a></dd>
+        <dt>{c.email}</dt><dd data-placeholder>{c.pendingEmail}</dd>
+        <dt>{c.telegram}</dt><dd data-placeholder>{c.pendingContact}</dd>
+        <dt>{c.address}</dt><dd data-placeholder>{c.pendingAddress}</dd>
+      </dl>
+    </div>
+    <div>
+      <h3 class="mono-label">{ui.nav.directions}</h3>
+      <ul>{nav.directions.map((l) => <li><a href={l.href}>{l.label}</a></li>)}</ul>
+    </div>
+    <div>
+      <h3 class="mono-label">{ui.nav.services}</h3>
+      <ul>{nav.services.map((l) => <li><a href={l.href}>{l.label}</a></li>)}</ul>
+      <h3 class="mono-label" style="margin-top:22px">{ui.nav.works}</h3>
+      <ul>{nav.works.map((l) => <li><a href={l.href}>{l.label}</a></li>)}</ul>
+      <h3 class="mono-label" style="margin-top:22px">{ui.groups.extra.label}</h3>
+      <ul>{nav.extras.map((l) => <li><a href={l.href}>{l.label}</a></li>)}</ul>
+    </div>
+    <div>
+      <h3 class="mono-label">{ui.nav.company}</h3>
+      <ul>
+        <li><a href={nav.knowledge.href}>{nav.knowledge.label}</a></li>
+        <li><a href="/o-kompanii/">{ui.nav.about}</a></li>
+        <li><a href="/proekty/">{ui.nav.projects}</a></li>
+        <li><a href="/dokumenty/">{ui.nav.documents}</a></li>
+        <li><a href="/kontakty/">{ui.nav.contacts}</a></li>
+        <li><a href="/privacy/">{ui.nav.privacy}</a></li>
+        <li><a href="/consent/">{ui.nav.consent}</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="container footer-bottom">
+    <p class="small muted">{footer.copyright}</p>
+    <p class="small muted">{footer.disclaimer}</p>
+  </div>
+</footer>

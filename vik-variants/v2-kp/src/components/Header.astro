@@ -1,0 +1,39 @@
+---
+import Logo from './Logo.astro';
+import { nav, cta } from '../content.mjs';
+import { ui } from '../ui.mjs';
+const { path = '/', formHref = '#intake' } = Astro.props;
+const cur = (p: string) => (path === p ? 'page' : undefined);
+const groups = [
+  { label: ui.nav.directions, href: '/#napravleniya', items: nav.directions, open: path.startsWith('/napravleniya/') },
+  { label: ui.nav.services, href: '/#uslugi', items: [...nav.services, ...(nav.extras ?? [])], open: false },
+  { label: ui.nav.works, href: '/#raboty', items: nav.works, open: false },
+];
+---
+<header class="site-header" data-header>
+  <div class="container header-inner">
+    <Logo />
+    <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="main-nav" data-menu-toggle>
+      <span class="sr-only">{ui.menu}</span>
+      <span class="bars" aria-hidden="true"><span></span><span></span></span>
+    </button>
+    <!-- Фолбэк без JS: меню открывается через :target (#main-nav), закрывается ссылкой «Закрыть меню». -->
+    <a class="menu-nojs" href="#main-nav"><span class="sr-only">{ui.menu}</span><span class="bars" aria-hidden="true"><span></span><span></span></span></a>
+    <nav id="main-nav" class="main-nav" aria-label={ui.navMain}>
+      <a class="menu-nojs-close" href="#nav-closed">{ui.menuClose} <span aria-hidden="true">×</span></a>
+      <a class="nav-link" href="/o-kompanii/" aria-current={cur('/o-kompanii/')}>{ui.nav.about}</a>
+      {groups.map((g) => (
+        <div class="has-sub">
+          <a class="nav-link" href={g.href}>{g.label}</a>
+          <div class="sub">
+            {g.items.map((l) => <a href={l.href} aria-current={cur(l.href)}>{l.label}</a>)}
+          </div>
+        </div>
+      ))}
+      <a class="nav-link" href="/proekty/" aria-current={cur('/proekty/')}>{ui.nav.projects}</a>
+      {nav.knowledge && <a class="nav-link" href={nav.knowledge.href} aria-current={path.startsWith(nav.knowledge.href) ? 'page' : undefined}>{nav.knowledge.label}</a>}
+      <a class="nav-link" href="/kontakty/" aria-current={cur('/kontakty/')}>{ui.nav.contacts}</a>
+      <a class="btn btn-gold btn-sm" href={formHref}>{cta.header}</a>
+    </nav>
+  </div>
+</header>

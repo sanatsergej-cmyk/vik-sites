@@ -1,0 +1,127 @@
+---
+// Фирменный блок страницы услуги (волна 2): у каждой из 12 услуг своя визуализация по смыслу.
+// Всё содержимое — из полей услуги (scopeGroups, steps, extra, boundary) и photos.mjs; подписи схем — ui.sch.
+import Scheme from './Scheme.astro';
+import Steps from './Steps.astro';
+import Pic from './Pic.astro';
+import Icon from './Icon.astro';
+import { photos } from '../content.mjs';
+import { ui } from '../ui.mjs';
+const { s } = Astro.props;
+const sch = ui.sch;
+const pad = (i: number) => String(i + 1).padStart(2, '0');
+const schemeKinds = ['earthworks', 'pipeline-install', 'cable-install', 'itp-design', 'relocation', 'expertise'];
+const photosOn = import.meta.env.PUBLIC_PHOTOS === '1';
+const realPhotos = photosOn ? photos.filter((p) => !p.ai).slice(0, 4) : [];
+// РСО: «Система — Организация» из блока extra; название системы и организация разделены тире.
+const orgs = s.id === 'rso' ? (s.extra?.[0]?.items ?? []).map((x) => { const [a, ...b] = x.split(/\s—\s/u); return { sys: a, org: b.join(' — ') }; }) : [];
+const orgNote = s.id === 'rso' ? s.extra?.[0]?.note : null;
+---
+{s.id === 'technical-customer' && (
+  <div class="sig sig-tz">
+    <div class="resp-map rv" aria-hidden="true">
+      <div class="rm-node rm-cust"><span class="mono">01</span>{sch.customer}</div>
+      <div class="rm-link rm-link-a"></div>
+      <div class="rm-node rm-vik"><span class="rm-mark"></span>{sch.vik}</div>
+      <div class="rm-link rm-link-b"></div>
+      <div class="rm-side">
+        <div class="rm-node"><span class="mono">02</span>{sch.designer}</div>
+        <div class="rm-node"><span class="mono">03</span>{sch.rsoExp}</div>
+        <div class="rm-node"><span class="mono">04</span>{sch.contractors}</div>
+      </div>
+    </div>
+    <h2 class="block-title">{ui.w2.respTitle}</h2>
+    <div class="table-wrap rv">
+      <table class="resp">
+        <thead><tr><th scope="col">{ui.w2.respBlock}</th><th scope="col">{ui.w2.respWe}</th></tr></thead>
+        <tbody>
+          {s.scopeGroups.map((g, i) => <tr><th scope="row"><span class="mono">{pad(i)}</span>{g.title}</th><td><ul class="dash">{g.items.map((x) => <li>{x}</li>)}</ul></td></tr>)}
+          {s.boundary && <tr class="resp-limit"><th scope="row">{ui.w2.respLimit}</th><td>{s.boundary}</td></tr>}
+        </tbody>
+      </table>
+    </div>
+  </div>
+)}
+
+{s.id === 'design' && (
+  <div class="sig sig-design cols">
+    <div>
+      <h2 class="block-title">{ui.w2.sheets}</h2>
+      <p class="sheet-tabs" aria-hidden="true"><span class="mono">{sch.stageP}</span><span class="mono">{sch.stageR}</span></p>
+      <div class="sheets rv">
+        {s.scopeGroups.map((g, i) => (
+          <article class="sheet" style={`--k:${i}`}>
+            <header><span class="mono">{pad(i)}</span><span class="mono">{`${pad(i)} / ${pad(s.scopeGroups.length - 1)}`}</span></header>
+            <h3>{g.title}</h3>
+            <ul class="dash">{g.items.map((x) => <li>{x}</li>)}</ul>
+            <footer class="sheet-stamp" aria-hidden="true"><span></span><span></span><span></span></footer>
+          </article>
+        ))}
+      </div>
+    </div>
+    <div>
+      <h2 class="block-title">{ui.w2.approvals}</h2>
+      <Steps items={s.steps} variant="route" />
+    </div>
+  </div>
+)}
+
+{s.id === 'rso' && (
+  <div class="sig sig-rso">
+    <h2 class="block-title">{ui.w2.orgs}</h2>
+    <div class="orgmap">
+      <ul class="org-list">
+        {orgs.map((o, i) => <li class="rv" style={`--i:${i}`}><span class="mono">{o.sys}</span><strong>{o.org}</strong></li>)}
+      </ul>
+      <div class="org-core rv">
+        <p class="mono org-core-cap">{ui.w2.docPath}</p>
+        <Steps items={s.steps} variant="route" />
+      </div>
+    </div>
+    {orgNote && <p class="note" data-placeholder>{orgNote}</p>}
+  </div>
+)}
+
+{s.id === 'smr' && (
+  <div class="sig sig-smr">
+    <h2 class="block-title">{ui.w2.timeline}</h2>
+    <Steps items={s.steps} variant="timeline" />
+    {realPhotos.length > 0 && (
+      <div class="smr-strip">
+        {realPhotos.map((p, i) => (
+          <figure class="rv" style={`--i:${i}`}>
+            <div class="g-frame"><Pic src={p.src} alt={p.alt} width={750} height={1000} imgClass="g-img" parallax="0.03" /></div>
+            <figcaption><span class="mono">{pad(i)}</span>{p.cap}</figcaption>
+          </figure>
+        ))}
+      </div>
+    )}
+  </div>
+)}
+
+{s.id === 'handover' && (
+  <div class="sig sig-handover cols-3-9">
+    <h2 class="block-title">{ui.w2.docStack}</h2>
+    <div class="docstack">
+      {s.scopeGroups.map((g, i) => (
+        <details class="doc-folder rv" style={`--k:${i}`} open={i === 0}>
+          <summary><span class="doc-tab mono">{pad(i)}</span><span class="doc-title">{g.title}</span><span class="doc-count mono">{g.items.length}</span><Icon name="plus" size={22} /></summary>
+          <ul class="list">{g.items.map((x) => <li>{x}</li>)}</ul>
+        </details>
+      ))}
+    </div>
+  </div>
+)}
+
+{s.id === 'connection' && (
+  <div class="sig sig-quest">
+    <h2 class="block-title">{ui.w2.quest}</h2>
+    <Steps items={s.steps} variant="quest" endLabel={ui.w2.questEnd} />
+  </div>
+)}
+
+{schemeKinds.includes(s.id) && (
+  <div class="sig sig-scheme">
+    <Scheme kind={s.id} caption={s.label} />
+  </div>
+)}

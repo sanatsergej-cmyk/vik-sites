@@ -1,0 +1,28 @@
+---
+import Base from '../layouts/Base.astro';
+import Icon from '../components/Icon.astro';
+import { privacy } from '../content/index.mjs';
+---
+<Base title={privacy.title} description={privacy.description} path="/privacy/" noindex>
+  <section class="page-hero narrow">
+    <div class="container doc">
+      <p class="crumbs"><a href="/">Главная</a><span class="sep"></span>Политика</p>
+      <p class="eyebrow">Документ</p>
+      <h1>{privacy.h1}</h1>
+    </div>
+  </section>
+  <section class="section">
+    <div class="container doc">
+      <div class="draft">
+        <span class="aud-ico"><Icon name="remarks" size={22} /></span>
+        <div>
+          <p><strong>{privacy.draftNote}</strong></p>
+          <ul class="list">{privacy.openItems.map((x) => <li>{x}</li>)}</ul>
+        </div>
+      </div>
+      {privacy.sections.map((s) => (
+        <div class="group"><h2>{s.h}</h2>{s.p.map((t) => <p>{t}</p>)}</div>
+      ))}
+    </div>
+  </section>
+</Base>

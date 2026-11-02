@@ -1,0 +1,59 @@
+---
+// База знаний: асимметричная подача — первая статья крупно, остальные «листами» в две колонки.
+import Base from '../../layouts/Base.astro';
+import Intake from '../../components/Intake.astro';
+import { articles, knowledgeBase, serviceByPath, directionByPath } from '../../content.mjs';
+import { ui } from '../../ui.mjs';
+
+const topic = (a) => {
+  const r = a.related?.[0];
+  return (r && (serviceByPath(r)?.label ?? directionByPath(r)?.label)) || ui.kb.all;
+};
+const fmt = (d) => d.split('-').reverse().join('.');
+const pad = (i) => String(i + 1).padStart(2, '0');
+const [first, ...rest] = articles;
+---
+<Base
+  title={knowledgeBase.title}
+  description={knowledgeBase.description}
+  path="/baza-znaniy/"
+  crumbs={[{ name: ui.home, href: '/' }, { name: knowledgeBase.h1, href: '/baza-znaniy/' }]}
+>
+  <section class="page-hero kb-hero">
+    <div class="container kb-hero-grid">
+      <div>
+        <p class="crumbs"><a href="/">{ui.home}</a> <span aria-hidden="true">/</span> {knowledgeBase.h1}</p>
+        <h1>{knowledgeBase.h1}</h1>
+        <p class="lead">{knowledgeBase.lead}</p>
+      </div>
+      <ol class="kb-index mono" aria-label={ui.kb.toc}>
+        {articles.map((a, i) => <li><a href={`/baza-znaniy/${a.slug}/`}><span>{pad(i)}</span>{a.h1}</a></li>)}
+      </ol>
+    </div>
+  </section>
+
+  <section class="section kb-list-sec">
+    <div class="container">
+      <a class="kb-card kb-feature rv" href={`/baza-znaniy/${first.slug}/`}>
+        <span class="kb-num mono" aria-hidden="true">01</span>
+        <span class="kb-meta mono"><span class="kb-topic">{topic(first)}</span><span>{first.readMin} {ui.kb.min}</span><span>{first.sections.length} {ui.kb.sections}</span></span>
+        <strong class="kb-title">{first.h1}</strong>
+        <span class="kb-lead">{first.lead}</span>
+        <span class="link-arrow">{ui.more}<span aria-hidden="true">→</span></span>
+      </a>
+      <div class="kb-grid">
+        {rest.map((a, i) => (
+          <a class="kb-card rv" href={`/baza-znaniy/${a.slug}/`} style={`--i:${i % 2}`}>
+            <span class="kb-num mono" aria-hidden="true">{pad(i + 1)}</span>
+            <span class="kb-meta mono"><span class="kb-topic">{topic(a)}</span><span>{a.readMin} {ui.kb.min}</span></span>
+            <strong class="kb-title">{a.h1}</strong>
+            <span class="kb-lead">{a.lead}</span>
+            <span class="kb-foot mono">{ui.kb.updated} {fmt(a.updated)}</span>
+          </a>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <Intake />
+</Base>

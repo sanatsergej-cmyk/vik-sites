@@ -1,0 +1,92 @@
+---
+import Base from '../layouts/Base.astro';
+import Intake from '../components/Intake.astro';
+import { about, riskPoints, home, glossary, route, mission, principles } from '../content.mjs';
+import { ui } from '../ui.mjs';
+const seam = riskPoints.find((r) => /стык/i.test(r.t)) ?? riskPoints[riskPoints.length - 1];
+const pad = (i) => String(i + 1).padStart(2, '0');
+---
+<Base
+  title={about.title}
+  description={about.description}
+  path="/o-kompanii/"
+  crumbs={[{ name: ui.home, href: '/' }, { name: ui.nav.about, href: '/o-kompanii/' }]}
+>
+  <section class="page-hero about-hero">
+    <div class="container about-grid">
+      <div>
+        <p class="crumbs"><a href="/">{ui.home}</a> <span aria-hidden="true">/</span> {ui.nav.about}</p>
+        <h1>{about.h1}</h1>
+        <p class="lead">{about.lead}</p>
+      </div>
+      <figure class="seams" data-scene data-mode="time" data-steps="2">
+        <figcaption><p class="mono-label">{seam.t}</p><p class="muted small">{seam.d}</p></figcaption>
+        <div class="seam-rows">
+          <div class="seam-row seam-a">
+            <span class="seam-lab mono">{ui.page.seamA}</span>
+            <ol>{route.map((r, i) => <li><span class="mono">{r.n}</span>{r.t}{i < route.length - 1 && <i class="seam-x" aria-hidden="true"></i>}</li>)}</ol>
+          </div>
+          <div class="seam-row seam-b">
+            <span class="seam-lab mono">{ui.page.seamB}</span>
+            <span class="seam-pipe" aria-hidden="true"><span class="seam-fill L" data-k="0.3" data-d="1.4"></span></span>
+            <ol>{route.map((r) => <li><span class="mono">{r.n}</span>{r.t}</li>)}</ol>
+          </div>
+        </div>
+      </figure>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container two">
+      <div class="rv">
+        <h2>{ui.page.riskAbout}</h2>
+        <ul class="tick-list">{riskPoints.map((r) => <li><strong>{r.t}.</strong> {r.d}</li>)}</ul>
+      </div>
+      <div class="rv">
+        <h2>{about.how.title}</h2>
+        <ol class="how-list">{about.how.items.map((r, i) => <li><span class="mono">{pad(i)}</span><div><strong>{r.t}</strong><p class="muted">{r.d}</p></div></li>)}</ol>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container about-mission">
+      <div class="mission rv">
+        <p class="mission-badge">{ui.mission.badge}</p>
+        <p class="mono-label">{mission.title}</p>
+        <p>{mission.text}</p>
+      </div>
+      <div class="rv">
+        <p class="mono-label">{ui.page.principlesT}</p>
+        <ol class="princ">{principles.map((x, i) => <li><span class="mono">{pad(i)}</span>{x}</li>)}</ol>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container two">
+      <div class="rv"><h2>{about.partners.title}</h2><p class="muted">{about.partners.text}</p></div>
+      <div class="rv"><h2>{about.geography.title}</h2><p class="muted">{about.geography.text}</p></div>
+    </div>
+  </section>
+  <section class="section">
+    <div class="container">
+      <div class="section-head rv"><h2>{home.audiences.title}</h2></div>
+      <div class="aud">
+        {home.audiences.items.map((a, i) => (
+          <div class="aud-col rv"><span class="mono">{pad(i)}</span><h3>{a.t}</h3><p class="muted">{a.d}</p></div>
+        ))}
+      </div>
+    </div>
+  </section>
+  <section class="section">
+    <div class="container">
+      <h2 class="rv">{ui.page.glossary}</h2>
+      <dl class="gloss rv">{glossary.map((g) => <><dt class="mono">{g.t}</dt><dd>{g.d}</dd></>)}</dl>
+    </div>
+  </section>
+  <section class="section">
+    <div class="container"><div class="statusbox"><h3>{about.team.title}</h3><p class="muted">{about.team.text}</p></div></div>
+  </section>
+  <Intake />
+</Base>

@@ -1,0 +1,19 @@
+---
+// Шаги работы в тематической подаче. variant: flow (поток воды), heat (подача/обратка), circuit (участки цепи),
+// floors (зоны здания), trace (трасса газа), timeline (площадка), quest (путь заявки), route (маршрут согласований).
+// Разметка одна, оформление — в wave2.css. Без JS все шаги видны.
+const { items = [], variant = 'flow', endLabel } = Astro.props;
+const list = items.map((x, i) => ({ ...x, i }));
+---
+<ol class={`stp stp-${variant}`} style={`--count:${items.length}`}>
+  {list.map((x) => (
+    <li class="rv" style={`--i:${x.i}`}>
+      <span class="stp-node" aria-hidden="true"><span class="mono">{String(x.i + 1).padStart(2, '0')}</span></span>
+      <div class="stp-body">
+        <h3>{x.t}</h3>
+        {x.d && <p>{x.d}</p>}
+      </div>
+    </li>
+  ))}
+  {endLabel && <li class="stp-end rv" aria-hidden="true"><span class="stp-flag"></span><span class="mono">{endLabel}</span></li>}
+</ol>

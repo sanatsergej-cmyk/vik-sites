@@ -1,0 +1,43 @@
+---
+import Emblem from './Emblem.astro';
+import { nav, cta, brand } from '../content.mjs';
+import { ui } from '../ui.mjs';
+const { path } = Astro.props;
+const cur = (h) => (path === h ? 'page' : undefined);
+---
+<header class="site-header">
+  <div class="container header-inner">
+    <a class="brand" href="/" aria-label={`${brand.name} — ${ui.toHome.toLowerCase()}`}>
+      <Emblem size={34} cls="brand-mark" title={ui.emblemAlt} />
+      <span class="brand-word">{brand.name}</span>
+    </a>
+    <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="main-nav" data-menu-toggle>
+      <span class="sr-only">{ui.menu}</span>
+      <span class="bars" aria-hidden="true"></span>
+    </button>
+    <nav id="main-nav" class="main-nav" aria-label={ui.menu}>
+      <div class="has-sub">
+        <a href="/#napravleniya">{ui.nav.directions}</a>
+        <div class="sub">{nav.directions.map((l) => <a href={l.href} aria-current={cur(l.href)}>{l.label}</a>)}</div>
+      </div>
+      <div class="has-sub">
+        <a href="/#uslugi">{ui.nav.services}</a>
+        <div class="sub sub-wide">
+          {nav.services.map((l) => <a href={l.href} aria-current={cur(l.href)}>{l.label}</a>)}
+          <span class="sub-label mono">{ui.groups.extra.label}</span>
+          {nav.extras.map((l) => <a href={l.href} aria-current={cur(l.href)}>{l.label}</a>)}
+        </div>
+      </div>
+      <div class="has-sub">
+        <a href="/#raboty">{ui.nav.works}</a>
+        <div class="sub">{nav.works.map((l) => <a href={l.href} aria-current={cur(l.href)}>{l.label}</a>)}</div>
+      </div>
+      <a href={nav.knowledge.href} aria-current={path?.startsWith(nav.knowledge.href) ? 'page' : undefined}>{nav.knowledge.label}</a>
+      <a href="/o-kompanii/" aria-current={cur('/o-kompanii/')}>{ui.nav.about}</a>
+      <a href="/proekty/" aria-current={cur('/proekty/')}>{ui.nav.projects}</a>
+      <a href="/kontakty/" aria-current={cur('/kontakty/')}>{ui.nav.contacts}</a>
+      <a class="nav-phone mono" href={ui.phoneHref}>{ui.phone}</a>
+      <a class="btn btn-primary btn-sm" href="#intake">{cta.header}</a>
+    </nav>
+  </div>
+</header>

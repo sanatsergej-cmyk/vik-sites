@@ -1,0 +1,17 @@
+---
+// Лента этапов с трубопроводом, который заполняется при прокрутке. Без JS все этапы видны.
+const { items = [], compact = false } = Astro.props;
+---
+<div class={`route ${compact ? 'route-compact' : ''}`} data-route style={`--count:${items.length}`}>
+  <div class="route-track" aria-hidden="true"><span class="route-fill"></span></div>
+  <ol class="route-steps">
+    {items.map((r, i) => (
+      <li class="route-step" style={`--i:${i}`}>
+        <span class="route-node" aria-hidden="true"><span></span></span>
+        <span class="route-n mono">{r.n ?? String(i + 1).padStart(2, '0')}</span>
+        <strong class="route-t">{r.t}</strong>
+        {r.d && <span class="route-d">{r.d}</span>}
+      </li>
+    ))}
+  </ol>
+</div>

@@ -1,0 +1,23 @@
+---
+// Знак ВиК: треугольник по мотивам эскизов 24.09 (синий/индиго), перерисован линиями.
+// Буквы построены штрихами, а не шрифтом, чтобы знак одинаково выглядел везде и «рисовался» при загрузке.
+import { ui } from '../ui.mjs';
+const { size = 240, draw = false, title = ui.emblemAlt, cls = '' } = Astro.props;
+const h = Math.round((size * 216) / 240);
+---
+<svg class:list={['emblem', cls, { 'em-anim': draw }]} viewBox="0 0 240 216" width={size} height={h} role="img" aria-label={title}>
+  <title>{title}</title>
+  <g fill="none" stroke-linecap="butt" stroke-linejoin="miter">
+    <path class="em-d em-1" pathLength="1" d="M34 196 L114 56" stroke="var(--em-a, #3c64d8)" stroke-width="16" />
+    <path class="em-d em-2" pathLength="1" d="M126 56 L206 196" stroke="var(--em-b, #6cc4ff)" stroke-width="16" />
+    <g stroke="var(--em-t, #eaf1ff)" stroke-width="6" stroke-linecap="square" transform="translate(-3 0)">
+      <path class="em-d em-6" pathLength="1" d="M88 132 V166 H99 A8.5 8.5 0 0 0 99 149 H88 M88 132 H97 A8.5 8.5 0 0 1 97 149" />
+      <path class="em-d em-7" pathLength="1" d="M113 142 V166 L129 142 V166" />
+      <path class="em-d em-8" pathLength="1" d="M136 132 V166 M155 132 L137 150 L156 166" />
+    </g>
+    <path class="em-d em-3" pathLength="1" d="M4 182 H116 C144 182 156 196 188 196 H236" stroke="var(--em-a, #3c64d8)" stroke-width="7" />
+    <path class="em-d em-4" pathLength="1" d="M4 173 H110 C140 173 154 187 190 187 H228" stroke="var(--em-b, #6cc4ff)" stroke-width="3.5" />
+    <path class="em-d em-5" pathLength="1" d="M20 206 H124 C150 206 162 210 180 210 H220" stroke="var(--em-c, #c7d3ea)" stroke-width="2.5" />
+  </g>
+  <polygon class="em-apex" points="120,14 104,43 136,43" fill="var(--em-b, #6cc4ff)" />
+</svg>

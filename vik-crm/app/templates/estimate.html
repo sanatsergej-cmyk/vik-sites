@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block content %}
+{% set w = user.role.value != 'viewer' %}
+<p><a href="/deals/{{ deal.id }}">← {{ deal.title }}</a></p>
+<h1>{{ est.title }}</h1>
+<div class="cols">
+<section>
+  <form method="post" action="/estimates/{{ est.id }}" class="card form">
+    <input type="hidden" name="csrf" value="{{ csrf(request) }}">
+    <label>Название<input name="title" value="{{ est.title }}" required></label>
+    <label>Статус<select name="status">{% for s in ['draft','final','sent'] %}<option {{ 'selected' if est.status == s else '' }}>{{ s }}</option>{% endfor %}</select></label>
+    <label>База МТР без НДС, ₽<input name="base_mtr" value="{{ est.base_mtr }}"></label>
+    <label>База СМР без НДС, ₽ (с НР и СП)<input name="base_smr" value="{{ est.base_smr }}"></label>
+    <label>Наценка МТР<input name="k_mtr" value="{{ est.k_mtr }}"></label>
+    <label>Наценка СМР<input name="k_smr" value="{{ est.k_smr }}"></label>
+    <label>НДС (0.22 = 22%)<input name="vat" value="{{ est.vat }}"></label>
+    <label>Лимитированные затраты, % от ИТОГО<input name="lim_percent" value="{{ est.lim_percent }}"></label>
+    {% if w %}<button>Пересчитать и сохранить</button>{% endif %}
+  </form>
+</section>
+<section>
+  <h2>Итог</h2>
+  <div class="tbl"><table>
+    <tr><td>МТР с наценкой и НДС</td><td>{{ p.mtr_with_vat|money }}</td></tr>
+    <tr><td>СМР с наценкой и НДС</td><td>{{ p.smr_with_vat|money }}</td></tr>
+    <tr><th>ИТОГО</th><th>{{ p.subtotal|money }}</th></tr>
+    <tr><td>Лимитированные затраты</td><td>{{ p.limited|money }}</td></tr>
+    <tr><th>Общая стоимость</th><th>{{ p.total|money }}</th></tr>
+  </table></div>
+  <p>
+    <a class="btn" href="/estimates/{{ est.id }}/kp.xlsx">Скачать КП (xlsx)</a>
+    {% if user.role.value == 'admin' %}<a class="btn alt" href="/estimates/{{ est.id }}/kp-internal.xlsx">КП + внутренний лист</a>{% endif %}
+  </p>
+  <p class="muted">Внутренний лист с наценками заказчику не передавать.</p>
+  <h2>Файлы расчёта</h2>
+  <ul>{% for f in files %}<li><a href="/files/{{ f.id }}">{{ f.filename }}</a></li>{% else %}<li class="muted">Файлов нет</li>{% endfor %}</ul>
+  {% if w %}<form method="post" action="/deals/{{ deal.id }}/files" enctype="multipart/form-data" class="inline">
+    <input type="hidden" name="csrf" value="{{ csrf(request) }}"><input type="hidden" name="estimate_id" value="{{ est.id }}">
+    <input type="file" name="file" required><button>Прикрепить</button>
+  </form>{% endif %}
+</section>
+</div>
+{% endblock %}

@@ -1,0 +1,198 @@
+---
+// Волна 2: схема системы направления + шаги работы (steps), связанные номерами.
+// Вода — разрез трассы (колодец, ввод, водомерный узел), шаги как поток воды.
+// Тепло — подающая/обратная, камера, ИТП. Электро — однолинейная ТП → КЛ → ВРУ, шаги как участки цепи.
+// Вентиляция — воздуховод через этажи, шаги как зоны здания. Газ — трасса без давлений и ГРП.
+// Подписи на схеме — условные обозначения из ui.dia; тексты шагов — из контента.
+import { ui } from '../ui.mjs';
+const { d } = Astro.props;
+const D = ui.dia;
+const slug = d.slug;
+const n = d.steps.length;
+const vb = { vodosnabzhenie: '0 0 600 350', teplosnabzhenie: '0 0 600 360', elektrosnabzhenie: '0 0 600 320', ventilyatsiya: '0 0 600 520', gazosnabzhenie: '0 0 600 310' }[slug];
+
+// Позиции номеров шагов на схеме
+const M = {
+  vodosnabzhenie: [[50, 270], [110, 270], [175, 270], [260, 270], [345, 270], [556, 190]],
+  teplosnabzhenie: [[45, 220], [115, 220], [212, 220], [300, 220], [370, 220], [530, 120]],
+  elektrosnabzhenie: [[80, 290], [180, 185], [286, 185], [392, 185], [455, 290], [578, 185]],
+  ventilyatsiya: [[520, 434], [520, 362], [520, 290], [520, 218], [520, 146], [520, 80]],
+  gazosnabzhenie: [[40, 240], [130, 240], [230, 240], [330, 240], [410, 190]],
+}[slug].slice(0, n);
+const bow = (x, y, r = 9) => `M${x - r} ${y - r} L${x + r} ${y + r} L${x + r} ${y - r} L${x - r} ${y + r} Z`;
+const bowV = (x, y, r = 9) => `M${x - r} ${y - r} L${x + r} ${y - r} L${x - r} ${y + r} L${x + r} ${y + r} Z`;
+const floors = [110, 182, 254, 326, 398];
+---
+<div class="flow" id="marshrut" data-flow>
+  <figure class="flow-fig">
+    <svg class="fd iso" viewBox={vb} role="img" aria-label={`${ui.page.scheme}: ${d.label}`} data-scene data-mode="time" data-steps="2">
+      <defs>
+        <pattern id="fd-h" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="8" /></pattern>
+      </defs>
+
+      {slug === 'vodosnabzhenie' && (
+        <g>
+          <rect class="soil" x="0" y="150" width="600" height="200" />
+          <rect class="hz" x="0" y="150" width="400" height="10" />
+          <path class="gl" d="M0 150 H600" />
+          <text class="tm" x="8" y="140">{D.ground}</text>
+          <g class="L fade" data-k="0" data-d="0.5">
+            <rect class="bld" x="400" y="40" width="180" height="110" />
+            <path class="fl" d="M400 77 H580 M400 113 H580" />
+            <rect class="bsm" x="400" y="150" width="180" height="150" />
+            <text class="t" x="414" y="66">{D.building}</text>
+            <rect class="hz" x="146" y="150" width="10" height="180" /><rect class="hz" x="194" y="150" width="10" height="180" />
+            <rect class="hz" x="146" y="330" width="58" height="10" /><rect class="cap" x="138" y="144" width="74" height="8" />
+            <text class="t" x="128" y="128">{D.well}</text>
+            <circle class="nd" cx="50" cy="270" r="26" />
+          </g>
+          <g class="L" data-k="0.4" data-d="0.9"><path class="pp draw" d="M74 270 H540" pathLength="1" /></g>
+          <g class="L" data-k="1.2" data-d="0.4"><path class="pp thin draw" d="M540 270 H556 V52" pathLength="1" /></g>
+          <g class="L fade" data-k="1.3" data-d="0.4">
+            <path class="flowd" d="M74 270 H540" />
+            <path class="vlv" d={bow(448, 270)} /><circle class="nd mt" cx="490" cy="270" r="14" /><path class="vlv" d={bow(528, 270)} />
+            <text class="t" x="362" y="255">{D.entry}</text>
+            <text class="t" x="408" y="326">{D.meter}</text>
+            <text class="t" x="10" y="330">{D.cityMain}</text>
+          </g>
+        </g>
+      )}
+
+      {slug === 'teplosnabzhenie' && (
+        <g>
+          <rect class="soil" x="0" y="130" width="600" height="230" />
+          <rect class="hz" x="0" y="130" width="400" height="10" />
+          <path class="gl" d="M0 130 H600" />
+          <text class="tm" x="8" y="120">{D.ground}</text>
+          <g class="L fade" data-k="0" data-d="0.5">
+            <rect class="bld" x="400" y="20" width="185" height="110" />
+            <path class="fl" d="M400 57 H585 M400 93 H585" />
+            <rect class="bsm" x="400" y="130" width="185" height="150" />
+            <rect class="chan" x="0" y="198" width="400" height="84" />
+            <rect class="hz" x="150" y="166" width="8" height="134" /><rect class="hz" x="236" y="166" width="8" height="134" />
+            <rect class="hz" x="150" y="166" width="94" height="8" /><rect class="hz" x="150" y="292" width="94" height="8" />
+            <text class="t" x="8" y="188">{D.heatNet}</text>
+            <text class="t" x="128" y="326">{D.chamber}</text>
+          </g>
+          <g class="L" data-k="0.4" data-d="0.9"><path class="pp draw" d="M0 220 H460" pathLength="1" style="--c:var(--sys-heat)" /></g>
+          <g class="L" data-k="0.5" data-d="0.9"><path class="pp draw" d="M460 260 H0" pathLength="1" style="--c:var(--sys-ret)" /></g>
+          <g class="L" data-k="1.1" data-d="0.4">
+            <path class="pp thin draw" d="M530 195 V47 H538" pathLength="1" style="--c:var(--sys-heat)" />
+            <path class="pp thin draw" d="M478 47 V195" pathLength="1" style="--c:var(--sys-ret)" />
+          </g>
+          <g class="L fade" data-k="1.2" data-d="0.5">
+            <path class="flowd" d="M0 220 H460" /><path class="flowd rev" d="M460 260 H0" />
+            <path class="vlv" style="--c:var(--sys-heat)" d={bow(182, 220)} /><path class="vlv" style="--c:var(--sys-ret)" d={bow(182, 260)} />
+            <rect class="unit" x="460" y="195" width="95" height="85" />
+            <path class="zig" d="M470 255 l10 -14 l10 28 l10 -28 l10 28 l10 -28 l10 28 l10 -28 l5 7" />
+            <text class="t b" x="490" y="222">{D.itp}</text>
+            <circle class="nd mt" cx="430" cy="220" r="10" style="--c:var(--sys-heat)" />
+            <text class="t" x="406" y="186">{D.heatMeter}</text>
+            <rect class="rad" x="478" y="30" width="60" height="24" />
+            <path class="rib" d="M490 30 V54 M502 30 V54 M514 30 V54 M526 30 V54" />
+            <text class="t" x="412" y="82">{D.heating}</text>
+            <path class="pp thin" d="M8 345 H40" style="--c:var(--sys-heat)" /><text class="t" x="48" y="351">{D.supply}</text>
+            <path class="pp thin" d="M170 345 H202" style="--c:var(--sys-ret)" /><text class="t" x="210" y="351">{D.ret}</text>
+          </g>
+        </g>
+      )}
+
+      {slug === 'elektrosnabzhenie' && (
+        <g>
+          <g class="L fade" data-k="0" data-d="0.5">
+            <rect class="unit" x="30" y="110" width="100" height="150" />
+            <circle class="coil" cx="80" cy="166" r="24" /><circle class="coil" cx="80" cy="200" r="24" />
+            <text class="t b" x="62" y="96">{D.tp}</text>
+            <rect class="unit" x="440" y="105" width="100" height="165" />
+            <text class="t b" x="470" y="92">{D.vru}</text>
+          </g>
+          <g class="L" data-k="0.4" data-d="0.9"><path class="pp draw" d="M130 185 H470" pathLength="1" /></g>
+          <g class="L" data-k="1.0" data-d="0.5">
+            <path class="pp thin draw" d="M470 125 V250" pathLength="1" />
+            <path class="pp thin draw" d="M470 145 H588 M470 185 H588 M470 225 H588" pathLength="1" />
+          </g>
+          <g class="L fade" data-k="1.2" data-d="0.5">
+            <path class="flowd" d="M130 185 H470" />
+            <rect class="muff" x="222" y="173" width="18" height="24" /><rect class="muff" x="332" y="173" width="18" height="24" />
+            <text class="t" x="204" y="160">{D.muff}</text>
+            <text class="t" x="200" y="230">{D.kl}</text>
+            <path class="brk" d="M499 139 L511 151 M511 139 L499 151 M499 179 L511 191 M511 179 L499 191 M499 219 L511 231 M511 219 L499 231" />
+            <text class="t" x="480" y="296">{D.loads}</text>
+          </g>
+        </g>
+      )}
+
+      {slug === 'ventilyatsiya' && (
+        <g>
+          <rect class="soil" x="0" y="470" width="600" height="50" />
+          <rect class="hz" x="0" y="470" width="600" height="10" />
+          <path class="gl" d="M0 470 H600" />
+          <g class="L fade" data-k="0" data-d="0.5">
+            <rect class="bld" x="60" y="110" width="400" height="360" />
+            <path class="fl" d={floors.slice(1).map((y) => `M60 ${y} H460`).join(' ')} />
+            <rect class="unit" x="110" y="50" width="130" height="60" />
+            <circle class="coil" cx="150" cy="80" r="18" />
+            <path class="coil" d="M150 80 L150 64 M150 80 L164 88 M150 80 L136 88" />
+            <path class="rib" d="M196 58 V102 M208 58 V102 M220 58 V102" />
+            <text class="t" x="252" y="86">{D.ventRoom}</text>
+          </g>
+          <g class="L" data-k="0.3" data-d="0.8"><path class="pp duct draw" d="M170 110 V452" pathLength="1" /></g>
+          {floors.map((y, i) => (
+            <g class="L" data-k={0.7 + (4 - i) * 0.15} data-d="0.4">
+              <path class="pp duct2 draw" d={`M170 ${y + 24} H430`} pathLength="1" />
+            </g>
+          ))}
+          <g class="L fade" data-k="1.4" data-d="0.5">
+            {floors.map((y) => [230, 310, 390].map((x) => <rect class="grille" x={x} y={y + 33} width="24" height="7" />))}
+            <path class="flowd" d="M170 110 V452" />
+            <text class="t" x="200" y="460">{D.duct}</text>
+            {M.map(([x, y]) => <path class="tick" d={`M460 ${y} H${x - 16}`} />)}
+          </g>
+        </g>
+      )}
+
+      {slug === 'gazosnabzhenie' && (
+        <g>
+          <rect class="soil" x="0" y="140" width="600" height="170" />
+          <rect class="hz" x="0" y="140" width="440" height="10" />
+          <path class="gl" d="M0 140 H600" />
+          <text class="tm" x="8" y="130">{D.ground}</text>
+          <g class="L fade" data-k="0" data-d="0.5">
+            <rect class="bld" x="440" y="20" width="145" height="120" />
+            <path class="fl" d="M440 60 H585 M440 100 H585" />
+            <text class="t" x="456" y="48">{D.object}</text>
+            <circle class="nd" cx="40" cy="240" r="24" />
+          </g>
+          <g class="L" data-k="0.4" data-d="1"><path class="pp draw" d="M62 240 H410 V90 H440" pathLength="1" /></g>
+          <g class="L fade" data-k="1.2" data-d="0.5">
+            <path class="tape" d="M62 205 H400" />
+            <path class="flowd" d="M62 240 H410 V90 H440" />
+            <path class="vlv" d={bowV(410, 117)} />
+            <text class="t" x="396" y="122" text-anchor="end">{D.valve}</text>
+            <text class="t" x="150" y="196">{D.tape}</text>
+            <text class="t" x="8" y="292">{D.gasPoint}</text>
+          </g>
+        </g>
+      )}
+
+      {M.map(([x, y], i) => (
+        <g class="m" data-m={i}>
+          <circle cx={x} cy={y} r="15" />
+          <text x={x} y={y + 5}>{i + 1}</text>
+        </g>
+      ))}
+    </svg>
+  </figure>
+  <div class="flow-steps">
+    <h2>{ui.page.flow}</h2>
+    <p class="muted small">{ui.page.flowHint}</p>
+    <ol>
+      {d.steps.map((s, i) => (
+        <li data-flow-step={i}>
+          <span class="flow-n mono">{String(i + 1).padStart(2, '0')}</span>
+          <div><h3>{s.t}</h3><p>{s.d}</p></div>
+        </li>
+      ))}
+    </ol>
+  </div>
+</div>

@@ -1,0 +1,9 @@
+---
+// <picture> с webp и jpg-фолбэком. base — путь без расширения: '/photos/itp-1'.
+const { base, alt, width, height, class: cls, loading = 'lazy', small = false, sizes = '100vw', fetchpriority, ext = 'jpg' } = Astro.props;
+const webp = small ? `${base}-480.webp 480w, ${base}.webp ${width}w` : `${base}.webp`;
+---
+<picture class={cls}>
+  <source type="image/webp" srcset={webp} sizes={small ? sizes : undefined} />
+  <img src={`${base}.${ext}`} alt={alt} width={width} height={height} loading={loading} decoding="async" fetchpriority={fetchpriority} />
+</picture>

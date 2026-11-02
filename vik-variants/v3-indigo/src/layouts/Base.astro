@@ -1,0 +1,252 @@
+---
+import '../styles/global.css';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+import Consultant from '../../../../vik-site/src/components/Consultant.astro';
+import { indexing } from '../data/site';
+import { ui } from '../ui.mjs';
+
+const { title, description, path = '/', noindex = false, crumbs = [], trunk = false } = Astro.props;
+const site = (Astro.site?.toString() ?? '').replace(/\/$/, '');
+const canonical = indexing ? `${site}${path}` : undefined;
+const robots = !indexing || noindex ? 'noindex, nofollow' : 'index, follow';
+const breadcrumbLd =
+  indexing && crumbs.length
+    ? {
+        '@context': 'https://schema.org',
+        '@type': 'BreadcrumbList',
+        itemListElement: crumbs.map((c: { name: string; href: string }, i: number) => ({
+          '@type': 'ListItem',
+          position: i + 1,
+          name: c.name,
+          item: `${site}${c.href}`,
+        })),
+      }
+    : null;
+---
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <meta name="robots" content={robots} />
+    <meta name="theme-color" content="#0a1330" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    {canonical && <link rel="canonical" href={canonical} />}
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:locale" content="ru_RU" />
+    <script is:inline>
+      // Анимации включаются только при наличии JS и без prefers-reduced-motion: иначе весь контент виден сразу.
+      try { if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) document.documentElement.classList.add('anim'); } catch (e) {}
+    </script>
+    {breadcrumbLd && <script type="application/ld+json" set:html={JSON.stringify(breadcrumbLd)} />}
+    <slot name="head" />
+  </head>
+  <body>
+    <a class="skip" href="#main">{ui.skip}</a>
+    <Header path={path} />
+    {trunk && (
+      <div class="trunk" aria-hidden="true">
+        <div class="trunk-rail"><div class="trunk-fill"></div></div>
+        <div class="trunk-nodes"></div>
+      </div>
+    )}
+    <main id="main">
+      <slot />
+    </main>
+    <Footer />
+    <Consultant />
+    <script is:inline>
+      (function () {
+        // Меню на мобильном
+        var t = document.querySelector('[data-menu-toggle]');
+        var n = document.getElementById('main-nav');
+        if (t && n) {
+          t.addEventListener('click', function () {
+            var open = n.classList.toggle('open');
+            t.setAttribute('aria-expanded', open ? 'true' : 'false');
+            document.documentElement.classList.toggle('menu-open', open);
+          });
+          n.addEventListener('click', function (e) { if (e.target.closest('a') && n.classList.contains('open')) t.click(); });
+        }
+        // Предзаполнение формы из ?direction=&service=&stage= (как в V1)
+        var f = document.querySelector('[data-intake]');
+        if (f) {
+          var q = new URLSearchParams(location.search);
+          ['direction', 'service', 'stage'].forEach(function (k) { var v = q.get(k), el = f.elements[k]; if (v && el) el.value = v; });
+        }
+
+        var root = document.documentElement;
+        var clamp = function (v) { return v < 0 ? 0 : v > 1 ? 1 : v; };
+
+        // Волна 2 (работает и при reduced-motion: это навигация, а не анимация)
+        // Прогресс чтения и активный пункт оглавления в статьях
+        var prog = document.querySelector('.read-progress span');
+        var art = document.querySelector('.art');
+        var tocLinks = document.querySelectorAll('[data-toc]');
+        var secs = Array.prototype.map.call(tocLinks, function (a) { return document.getElementById(a.dataset.toc); });
+        function readUpd() {
+          if (prog && art) {
+            var r = art.getBoundingClientRect();
+            prog.style.transform = 'scaleX(' + clamp((innerHeight * 0.3 - r.top) / Math.max(1, r.height - innerHeight * 0.5)) + ')';
+          }
+          if (secs.length) {
+            var cur = 0;
+            secs.forEach(function (s, i) { if (s && s.getBoundingClientRect().top < innerHeight * 0.35) cur = i; });
+            Array.prototype.forEach.call(tocLinks, function (a, i) { if (i === cur) a.setAttribute('aria-current', 'true'); else a.removeAttribute('aria-current'); });
+          }
+        }
+        if (prog || secs.length) { addEventListener('scroll', function () { requestAnimationFrame(readUpd); }, { passive: true }); readUpd(); }
+        var tm = document.querySelector('.toc-mob');
+        if (tm) tm.addEventListener('click', function (e) { if (e.target.closest('a')) tm.open = false; });
+
+        // Шаги направления ↔ номера на схеме
+        Array.prototype.forEach.call(document.querySelectorAll('[data-flow]'), function (fl) {
+          var items = fl.querySelectorAll('[data-flow-step]');
+          var marks = fl.querySelectorAll('.m');
+          function setA(i) {
+            Array.prototype.forEach.call(items, function (x, j) { x.classList.toggle('on', j === i); });
+            Array.prototype.forEach.call(marks, function (x, j) { x.classList.toggle('on', j === i); });
+          }
+          if ('IntersectionObserver' in window) {
+            var ob = new IntersectionObserver(function (es) {
+              es.forEach(function (e) { if (e.isIntersecting) setA(+e.target.dataset.flowStep); });
+            }, { rootMargin: '-40% 0px -50% 0px' });
+            Array.prototype.forEach.call(items, function (x) { ob.observe(x); });
+          }
+          Array.prototype.forEach.call(items, function (x) {
+            x.addEventListener('mouseenter', function () { setA(+x.dataset.flowStep); });
+          });
+        });
+
+        if (!root.classList.contains('anim')) return;
+
+        // Сцены: слои .L с data-k (начало, в шагах) и data-d (длительность). --lp = локальный прогресс слоя 0..1
+        var scenes = Array.prototype.map.call(document.querySelectorAll('[data-scene]'), function (svg) {
+          return {
+            el: svg, mode: svg.dataset.mode, n: +svg.dataset.steps || 1, idx: -1,
+            layers: Array.prototype.map.call(svg.querySelectorAll('.L'), function (l) { return { el: l, k: +l.dataset.k || 0, d: +l.dataset.d || 0.5, v: -1 }; }),
+          };
+        });
+        function apply(s, pn) {
+          for (var i = 0; i < s.layers.length; i++) {
+            var L = s.layers[i], v = Math.round(clamp((pn - L.k) / L.d) * 1000) / 1000;
+            if (v !== L.v) { L.v = v; L.el.style.setProperty('--lp', v); }
+          }
+        }
+        scenes.forEach(function (s) { apply(s, 0); });
+
+        // Прокручиваемая сцена главной
+        var scroll = scenes.filter(function (s) { return s.mode === 'scroll'; });
+        scroll.forEach(function (s) {
+          var sec = s.el.closest('.scene');
+          s.track = sec.querySelector('.scene-steps');
+          s.steps = sec.querySelectorAll('.step');
+          s.cap = sec.querySelector('.scene-cap');
+        });
+
+        // Схемы, собирающиеся по мере прокрутки (услуги волны 2)
+        var viewed = scenes.filter(function (s) { return s.mode === 'view'; });
+
+        // Схемы направлений: «собираются» по времени, когда попадают в экран
+        var timed = scenes.filter(function (s) { return s.mode === 'time'; });
+        var io = 'IntersectionObserver' in window ? new IntersectionObserver(function (es) {
+          es.forEach(function (e) {
+            if (!e.isIntersecting) return;
+            io.unobserve(e.target);
+            var s = timed.filter(function (x) { return x.el === e.target; })[0];
+            var t0 = performance.now(), dur = 2600;
+            (function frame(now) {
+              var k = clamp((now - t0) / dur), ease = 1 - Math.pow(1 - k, 3);
+              apply(s, ease * s.n);
+              if (k < 1) requestAnimationFrame(frame);
+            })(t0);
+          });
+        }, { threshold: 0.2 }) : null;
+        timed.forEach(function (s) { if (io) io.observe(s.el); else apply(s, s.n); });
+
+        // Мягкое появление блоков
+        var rv = document.querySelectorAll('.rv');
+        var io2 = 'IntersectionObserver' in window ? new IntersectionObserver(function (es) {
+          es.forEach(function (e) { if (e.isIntersecting) { e.target.classList.add('in'); io2.unobserve(e.target); } });
+        }, { rootMargin: '0px 0px -8% 0px' }) : null;
+        Array.prototype.forEach.call(rv, function (el) { if (io2) io2.observe(el); else el.classList.add('in'); });
+
+        // Сквозной трубопровод (главная): заполнение по прокрутке, узлы секций загораются
+        var trunk = document.querySelector('.trunk'), fill, nodes = [];
+        function layoutTrunk() {
+          if (!trunk) return;
+          fill = trunk.querySelector('.trunk-fill');
+          var box = trunk.querySelector('.trunk-nodes');
+          box.innerHTML = '';
+          var max = document.documentElement.scrollHeight - innerHeight;
+          nodes = Array.prototype.map.call(document.querySelectorAll('[data-node]'), function (sec) {
+            var top = sec.getBoundingClientRect().top + scrollY;
+            var f = clamp((top - innerHeight * 0.5) / max);
+            var el = document.createElement('span');
+            el.className = 'trunk-node';
+            el.style.top = (f * 100) + '%';
+            el.textContent = sec.dataset.node;
+            box.appendChild(el);
+            return { el: el, f: f };
+          });
+        }
+
+        var narrow = window.matchMedia('(max-width: 900px)');
+        var hero = document.querySelector('.hero');
+        var tick = false;
+        function update() {
+          tick = false;
+          var vh = innerHeight;
+          scroll.forEach(function (s) {
+            var r = s.track.getBoundingClientRect();
+            // p = 1 ровно тогда, когда низ шагов доходит до низа экрана (сцена ещё «прилипла»)
+            var a = narrow.matches ? 0.15 : 0.5; // на мобильном шаги лежат под сценой во весь экран
+            var p = clamp((vh * a - r.top) / Math.max(1, r.height - vh * (1 - a))); // p = 1, когда низ шагов у низа экрана
+            apply(s, p * s.n);
+            var idx = Math.min(s.n - 1, Math.floor(p * s.n));
+            if (idx !== s.idx) {
+              s.idx = idx;
+              Array.prototype.forEach.call(s.steps, function (st, i) { st.classList.toggle('is-active', i === idx); });
+              if (s.cap) {
+                // Плашка текущего шага поверх сцены (видна только на узких экранах)
+                var st = s.steps[idx];
+                s.cap.innerHTML = '';
+                Array.prototype.forEach.call(st.querySelectorAll('[data-cap]'), function (n) {
+                  var c = n.cloneNode(true);
+                  Array.prototype.forEach.call(c.querySelectorAll('a'), function (x) { x.tabIndex = -1; });
+                  if (c.tagName === 'A') c.tabIndex = -1;
+                  s.cap.appendChild(c);
+                });
+                s.cap.style.setProperty('--c', st.style.getPropertyValue('--c'));
+                s.cap.classList.toggle('is-route', st.classList.contains('step-route'));
+              }
+            }
+          });
+          viewed.forEach(function (s) {
+            var r = s.el.getBoundingClientRect();
+            if (r.bottom < -200 || r.top > vh + 200) return;
+            apply(s, clamp((vh * 0.92 - r.top) / (vh * 0.45 + r.height * 0.55)) * s.n);
+          });
+          if (hero) hero.style.setProperty('--py', Math.min(scrollY, vh) + 'px');
+          if (trunk && fill) {
+            var max = document.documentElement.scrollHeight - vh;
+            var g = clamp(scrollY / max);
+            fill.style.transform = 'scaleY(' + g + ')';
+            nodes.forEach(function (nd) { nd.el.classList.toggle('on', g >= nd.f - 0.002); });
+          }
+        }
+        function req() { if (!tick) { tick = true; requestAnimationFrame(update); } }
+        addEventListener('scroll', req, { passive: true });
+        addEventListener('resize', function () { layoutTrunk(); req(); });
+        addEventListener('load', function () { layoutTrunk(); req(); });
+        layoutTrunk();
+        update();
+      })();
+    </script>
+  </body>
+</html>

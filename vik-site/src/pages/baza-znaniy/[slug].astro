@@ -1,0 +1,113 @@
+---
+import Base from '../../layouts/Base.astro';
+import Icon from '../../components/Icon.astro';
+import IntakeForm from '../../components/IntakeForm.astro';
+import { articles, knowledgeBase, serviceByPath, directionByPath, brand, cta } from '../../content/index.mjs';
+
+export function getStaticPaths() {
+  return articles.map((a: any) => ({ params: { slug: a.slug }, props: { a } }));
+}
+const { a } = Astro.props;
+const path = `/baza-znaniy/${a.slug}/`;
+const fmt = (d: string) => d.split('-').reverse().join('.');
+const pad = (i: number) => String(i + 1).padStart(2, '0');
+const rel = a.related.map((p: string) => {
+  const s = serviceByPath(p); if (s) return { href: p, label: s.label, lead: s.cardLead, icon: s.icon, kind: 'Услуга' };
+  const d = directionByPath(p); if (d) return { href: p, label: d.label, lead: d.cardLead, icon: d.icon, kind: 'Направление' };
+  return null;
+}).filter(Boolean);
+const others = articles.filter((x: any) => x.slug !== a.slug).slice(0, 3);
+// выноска-цитата: первый абзац среднего раздела (повтор для ритма, скрыт от скринридеров)
+const mid = Math.floor(a.sections.length / 2);
+const quote = a.sections[mid]?.p?.[0];
+const site = (Astro.site?.toString() ?? '').replace(/\/$/, '');
+const ld = [
+  { '@context': 'https://schema.org', '@type': 'Article', headline: a.h1, description: a.description, datePublished: a.updated, dateModified: a.updated, inLanguage: 'ru', author: { '@type': 'Organization', name: brand.name }, mainEntityOfPage: `${site}${path}` },
+  { '@context': 'https://schema.org', '@type': 'FAQPage', mainEntity: a.faq.map((f: any) => ({ '@type': 'Question', name: f.q, acceptedAnswer: { '@type': 'Answer', text: f.a } })) },
+];
+---
+<Base title={a.title} description={a.description} path={path} crumbs={[{ name: 'Главная', href: '/' }, { name: knowledgeBase.h1, href: '/baza-znaniy/' }, { name: a.h1, href: path }]}>
+  <script type="application/ld+json" set:html={JSON.stringify(ld)} />
+  <div class="read-progress" aria-hidden="true"><span data-progress></span></div>
+  <section class="page-hero art-hero">
+    <div class="container">
+      <p class="crumbs"><a href="/">Главная</a><span class="sep"></span><a href="/baza-znaniy/">{knowledgeBase.h1}</a><span class="sep"></span>Статья</p>
+      <p class="eyebrow">Статья · {a.readMin} мин чтения</p>
+      <h1>{a.h1}</h1>
+      <p class="lead">{a.lead}</p>
+      <p class="art-meta"><Icon name="clock" size={15} /> Обновлено <time datetime={a.updated}>{fmt(a.updated)}</time></p>
+    </div>
+  </section>
+
+  <div class="container article-grid">
+    <aside class="toc-aside">
+      <details class="toc" open>
+        <summary>Содержание</summary>
+        <ol>{a.sections.map((x: any, i: number) => <li><a href={`#s${i + 1}`} data-toc><span>{pad(i)}</span>{x.h}</a></li>)}<li><a href="#faq" data-toc><span>?</span>Вопросы</a></li></ol>
+      </details>
+    </aside>
+    <article class="article" data-article>
+      {a.sections.map((x: any, i: number) => (
+        <>
+          <section class="art-sec" id={`s${i + 1}`}>
+            <h2><span class="as-n">{pad(i)}</span>{x.h}</h2>
+            {x.p.map((t: string) => <p>{t}</p>)}
+            {x.list && <ul class="list">{x.list.map((t: string) => <li>{t}</li>)}</ul>}
+          </section>
+          {i === mid && quote && <blockquote class="pull" aria-hidden="true"><p>{quote}</p></blockquote>}
+        </>
+      ))}
+      <section class="art-sec" id="faq">
+        <h2><span class="as-n">?</span>Вопросы</h2>
+        <div class="faq">{a.faq.map((f: any) => <details class="q"><summary>{f.q}</summary><p>{f.a}</p></details>)}</div>
+      </section>
+      <div class="art-cta bezel"><div class="bezel-core">
+        <p class="eyebrow">Ваш объект</p>
+        <h2>Разберём вашу задачу по документам</h2>
+        <a class="btn btn-gold" href="#intake"><span>{cta.primary}</span><span class="btn-ico"><Icon name="arrow" size={16} /></span></a>
+      </div></div>
+    </article>
+  </div>
+
+  {rel.length > 0 && (
+    <section class="section">
+      <div class="container">
+        <div class="section-head" data-reveal><p class="eyebrow">По теме</p><h2>Связанные услуги и направления</h2></div>
+        <div class="rel-list">
+          {rel.map((o: any) => (
+            <a class="rel-row" href={o.href} data-reveal><Icon name={o.icon} size={26} /><span class="rr-t">{o.label}<small class="rr-k">{o.kind}</small></span><span class="rr-l">{o.lead}</span><span class="ix-go"><Icon name="arrow" size={16} /></span></a>
+          ))}
+        </div>
+        <div class="reads">
+          <p class="eyebrow">Ещё статьи</p>
+          <div class="reads-grid">
+            {others.map((x: any) => <a class="read-card" href={`/baza-znaniy/${x.slug}/`}><span class="rc-meta">{x.readMin} мин чтения</span><strong>{x.h1}</strong><span class="link-go">Читать <span class="btn-ico"><Icon name="arrow" size={14} /></span></span></a>)}
+          </div>
+        </div>
+      </div>
+    </section>
+  )}
+  <IntakeForm />
+  <script is:inline>
+    (function () {
+      var bar = document.querySelector('[data-progress]'), art = document.querySelector('[data-article]');
+      var links = Array.prototype.slice.call(document.querySelectorAll('[data-toc]'));
+      var secs = links.map(function (l) { return document.querySelector(l.getAttribute('href')); });
+      var toc = document.querySelector('.toc');
+      if (toc && window.matchMedia('(max-width: 1000px)').matches) toc.open = false;
+      links.forEach(function (l) { l.addEventListener('click', function () { if (window.matchMedia('(max-width: 1000px)').matches) toc.open = false; }); });
+      var tick = false;
+      function upd() {
+        tick = false;
+        var r = art.getBoundingClientRect(), vh = window.innerHeight;
+        var p = Math.min(1, Math.max(0, (vh * 0.3 - r.top) / Math.max(1, r.height - vh * 0.5)));
+        bar.style.transform = 'scaleX(' + p.toFixed(3) + ')';
+        var cur = 0;
+        secs.forEach(function (s, i) { if (s && s.getBoundingClientRect().top < vh * 0.35) cur = i; });
+        links.forEach(function (l, i) { l.classList.toggle('is-cur', i === cur); });
+      }
+      window.addEventListener('scroll', function () { if (!tick) { tick = true; requestAnimationFrame(upd); } }, { passive: true });
+      upd();
+    })();
+  </script>
+</Base>

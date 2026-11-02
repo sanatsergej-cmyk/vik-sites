@@ -1,0 +1,63 @@
+---
+import '../styles/global.css';
+import '../styles/wave2.css';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+import Consultant from '../../../../vik-site/src/components/Consultant.astro';
+import { indexing } from '../data/site';
+import { ui } from '../ui.mjs';
+
+const { title, description, path = '/', noindex = false, crumbs = [], hasForm = true, home = false } = Astro.props;
+const site = (Astro.site?.toString() ?? '').replace(/\/$/, '');
+const canonical = indexing ? `${site}${path}` : undefined;
+const robots = !indexing || noindex ? 'noindex, nofollow' : 'index, follow';
+const breadcrumbLd =
+  indexing && crumbs.length
+    ? {
+        '@context': 'https://schema.org',
+        '@type': 'BreadcrumbList',
+        itemListElement: crumbs.map((c: { name: string; href: string }, i: number) => ({
+          '@type': 'ListItem',
+          position: i + 1,
+          name: c.name,
+          item: `${site}${c.href}`,
+        })),
+      }
+    : null;
+---
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <meta name="robots" content={robots} />
+    <meta name="theme-color" content="#101315" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    {canonical && <link rel="canonical" href={canonical} />}
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:locale" content="ru_RU" />
+    <script is:inline>
+      document.documentElement.classList.add('js');
+      if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) document.documentElement.classList.add('rm');
+      else try { if (!sessionStorage.getItem('vik-logo')) { sessionStorage.setItem('vik-logo', '1'); document.documentElement.classList.add('logo-anim'); } } catch (e) {}
+    </script>
+    {breadcrumbLd && <script type="application/ld+json" set:html={JSON.stringify(breadcrumbLd)} />}
+    <slot name="head" />
+  </head>
+  <body class={home ? 'is-home' : ''}>
+    <a class="skip" href="#main">{ui.skip}</a>
+    <Header path={path} formHref={hasForm ? '#intake' : '/kontakty/#intake'} />
+    <main id="main" data-pipe-root>
+      <slot />
+    </main>
+    <Footer />
+    <Consultant />
+    <script>
+      import '../scripts/motion.js';
+    </script>
+  </body>
+</html>

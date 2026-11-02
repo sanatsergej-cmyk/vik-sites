@@ -1,0 +1,15 @@
+---
+// Логотип варианта V2: текстовое «ВиК» + геометрический знак-треугольник. Только вариант оформления, не утверждённая эмблема.
+// Анимация (в шапке, один раз за сессию): контур прорисовывается линией, внутренний треугольник заливается
+// изумрудом снизу вверх, затем проявляется «ВиК». Класс html.logo-anim ставит скрипт в <head> (Base.astro);
+// без JS и при prefers-reduced-motion знак статичный.
+import { ui } from '../ui.mjs';
+const { href = '/', size = 30 } = Astro.props;
+---
+<a class="brand" href={href} aria-label={ui.toHome}>
+  <svg class="brand-mark" viewBox="0 0 40 36" width={size} height={Math.round(size * 0.9)} aria-hidden="true">
+    <path class="bm-stroke" d="M20 2.5 37.5 33.5h-35z" pathLength="1" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linejoin="round" />
+    <path class="bm-fill" d="M20 16.5 28.6 31H11.4z" fill="currentColor" />
+  </svg>
+  <span class="brand-word">ВиК</span>
+</a>

@@ -1,0 +1,28 @@
+---
+import Pic from './Pic.astro';
+import { photos, photosNote } from '../content/photos.mjs';
+const { dir = null, title = 'Инженерные системы вблизи', limit = 6, eyebrow = 'Фото' } = Astro.props;
+const on = import.meta.env.PUBLIC_PHOTOS === '1';
+const list = photos.filter((p) => !dir || p.dir === dir).slice(0, limit);
+---
+{on && list.length > 0 && (
+  <section class="section gallery-sec">
+    <div class="container">
+      <div class="section-head" data-reveal>
+        <p class="eyebrow">{eyebrow}</p>
+        <h2>{title}</h2>
+      </div>
+      <div class:list={['gallery', `gallery--${list.length}`]}>
+        {list.map((p, i) => (
+          <figure class="shot" data-reveal style={`--i:${i}`}>
+            <div class="shot-img">
+              <Pic base={p.src.replace(/\.jpg$/, '')} alt={p.alt} width={750} height={1000} small sizes="(max-width: 760px) 80vw, 33vw" />
+            </div>
+            <figcaption><span class="shot-n">{String(i + 1).padStart(2, '0')}</span>{p.cap}</figcaption>
+          </figure>
+        ))}
+      </div>
+      <p class="note" data-placeholder>{photosNote}</p>
+    </div>
+  </section>
+)}

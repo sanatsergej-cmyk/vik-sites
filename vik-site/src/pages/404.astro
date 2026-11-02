@@ -1,0 +1,29 @@
+---
+import Base from '../layouts/Base.astro';
+import Icon from '../components/Icon.astro';
+import { nav, notFound, directions } from '../content/index.mjs';
+import { dirVisual } from '../data/visual';
+---
+<Base title={notFound.title} description={notFound.h1} path="/404/" noindex>
+  <section class="page-hero nf">
+    <div class="container">
+      <p class="eyebrow">Ошибка 404</p>
+      <p class="big-404" aria-hidden="true">404</p>
+      <h1>{notFound.h1}</h1>
+      <p class="lead">{notFound.lead}</p>
+      <p><a class="btn btn-gold" href="/"><span>{notFound.back}</span><span class="btn-ico"><Icon name="arrow" size={16} /></span></a></p>
+    </div>
+  </section>
+  <section class="section">
+    <div class="container">
+      <p class="eyebrow">Направления</p>
+      <nav class="sys-switch" aria-label="Направления" style="margin-bottom:34px">
+        {directions.map((d) => <a class="sys-chip" href={`/napravleniya/${d.slug}/`} style={`--hue:${dirVisual[d.slug].hue}`}><Icon name={d.icon} size={20} />{d.label}</a>)}
+      </nav>
+      <p class="eyebrow">Услуги и работы</p>
+      <div class="chips">
+        {[...nav.services, ...nav.works].map((l) => <a class="chip" href={l.href}>{l.label}</a>)}
+      </div>
+    </div>
+  </section>
+</Base>

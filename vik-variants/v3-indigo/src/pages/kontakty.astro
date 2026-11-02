@@ -1,0 +1,45 @@
+---
+import Base from '../layouts/Base.astro';
+import Intake from '../components/Intake.astro';
+import { contacts, form } from '../content.mjs';
+import { ui } from '../ui.mjs';
+const icons = [
+  'M8 6 H30 L38 14 V42 H8 Z M30 6 V14 H38 M14 22 H32 M14 29 H32 M14 36 H24',
+  'M20 8 a12 12 0 1 0 0.01 0 Z M29 29 L40 40 M14 20 H26 M20 14 V26',
+  'M6 24 H36 M28 14 L38 24 L28 34',
+];
+---
+<Base
+  title={contacts.title}
+  description={contacts.description}
+  path="/kontakty/"
+  crumbs={[{ name: ui.home, href: '/' }, { name: ui.nav.contacts, href: '/kontakty/' }]}
+>
+  <section class="page-hero">
+    <div class="container">
+      <p class="crumbs"><a href="/">{ui.home}</a> <span aria-hidden="true">/</span> {ui.nav.contacts}</p>
+      <h1>{contacts.h1}</h1>
+      <p class="lead">{contacts.lead}</p>
+      <p><a class="phone-big mono" href={ui.phoneHref}>{ui.phone}</a></p>
+    </div>
+  </section>
+  <section class="section">
+    <div class="container">
+      <div class="section-head rv"><p class="mono-label">{ui.page.contactMap}</p><h2>{contacts.how.title}</h2></div>
+      <div class="cmap" data-scene data-mode="time" data-steps="1.6">
+        <span class="cmap-line" aria-hidden="true"><span class="cmap-fill L" data-k="0" data-d="1.4"></span></span>
+        <ol>
+        {contacts.how.steps.map((r, i) => (
+          <li class="L fade" data-k={0.1 + i * 0.45} data-d="0.3">
+            <span class="cmap-node"><svg viewBox="0 0 46 48" aria-hidden="true"><path d={icons[i % 3]} /></svg></span>
+            <span class="mono">{String(i + 1).padStart(2, '0')}</span>
+            <strong>{r.t}</strong>
+            <small>{r.d}</small>
+          </li>
+        ))}
+        </ol>
+      </div>
+    </div>
+  </section>
+  <Intake title={form.contactsTitle} />
+</Base>

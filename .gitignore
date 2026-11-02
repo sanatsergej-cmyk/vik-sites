@@ -1,0 +1,18 @@
+# В репозиторий идёт только код сайтов и CRM. Материалы (переписка, реквизиты, КП) не публикуются.
+/*
+!/.gitignore
+!/vik-site/
+!/vik-variants/
+!/vik-crm/
+node_modules/
+dist/
+.vite-cache/
+.astro/
+.venv/
+.pytest_cache/
+__pycache__/
+*.pyc
+.env.local
+.DS_Store
+vik-crm/.env
+vik-crm/data/

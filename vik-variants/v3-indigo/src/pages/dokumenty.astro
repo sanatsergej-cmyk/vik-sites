@@ -1,0 +1,36 @@
+---
+import Base from '../layouts/Base.astro';
+import Emblem from '../components/Emblem.astro';
+import { documents, cta, brand } from '../content.mjs';
+import { ui } from '../ui.mjs';
+const isPh = (v) => /[XХ]{3,}/.test(v ?? '');
+---
+<Base title={documents.title} description={documents.description} path="/dokumenty/" noindex>
+  <section class="page-hero">
+    <div class="container docs-grid">
+      <div>
+        <p class="crumbs"><a href="/">{ui.home}</a> <span aria-hidden="true">/</span> {ui.nav.documents}</p>
+        <h1>{documents.h1}</h1>
+        <p class="lead">{documents.lead}</p>
+        <h2 class="mt">{ui.page.planned}</h2>
+        <ol class="outs">{documents.planned.map((x, i) => <li><span class="mono">{String(i + 1).padStart(2, '0')}</span>{x}</li>)}</ol>
+        <p class="mt"><a class="btn btn-primary" href="/kontakty/">{cta.qualification}</a></p>
+      </div>
+      <article class="passport" aria-label={ui.page.passport}>
+        <header class="pp-head">
+          <Emblem size={46} cls="brand-mark" />
+          <div><p class="mono-label">{ui.page.passport}</p><p class="pp-name">{brand.name}</p></div>
+        </header>
+        <dl class="pp-rows">
+          {documents.requisites.map(([kk, v], i) => (
+            <div class:list={['pp-row', { 'is-ph': isPh(v) }]}>
+              <dt><span class="mono">{String(i + 1).padStart(2, '0')}</span>{kk}</dt>
+              <dd class:list={{ mono: /\d|X|Х/.test(v ?? '') }}>{v ?? <span data-placeholder>{ui.page.pending}</span>}</dd>
+            </div>
+          ))}
+        </dl>
+        <p class="pp-note small">{ui.page.passportNote}</p>
+      </article>
+    </div>
+  </section>
+</Base>

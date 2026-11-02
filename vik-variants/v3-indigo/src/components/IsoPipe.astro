@@ -1,0 +1,10 @@
+---
+// Труба в изометрии: футляр (тёмная обводка) + тело + блик. Рисуется по --lp слоя.
+const { d, c, w = 8, k, dur = 0.7, dash = false, cls = '' } = Astro.props;
+const layer = k !== undefined;
+---
+<g class:list={['pipe', cls, { L: layer, dashed: dash }]} data-k={layer ? k : undefined} data-d={layer ? dur : undefined} style={`--c:${c};--w:${w}px`}>
+  <path class="draw p-case" d={d} pathLength="1" />
+  <path class="draw p-body" d={d} pathLength="1" />
+  {!dash && <path class="draw p-shine" d={d} pathLength="1" />}
+</g>

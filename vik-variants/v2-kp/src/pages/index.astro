@@ -1,0 +1,325 @@
+---
+import Base from '../layouts/Base.astro';
+import Icon from '../components/Icon.astro';
+import Pic from '../components/Pic.astro';
+import SectionHead from '../components/SectionHead.astro';
+import SystemPlate from '../components/SystemPlate.astro';
+import Route from '../components/Route.astro';
+import IntakeForm from '../components/IntakeForm.astro';
+import {
+  home, brand, principles, directions, mainServices, workServices, services, stages, route, riskPoints,
+  manufacturers, energy, mission, companyBlock, cta, form, clients, photos, photosNote,
+} from '../content.mjs';
+import { ui } from '../ui.mjs';
+
+const photosOn = import.meta.env.PUBLIC_PHOTOS === '1';
+const clientsOn = import.meta.env.PUBLIC_CLIENTS_BLOCK === '1';
+
+const tech = services.find((s) => s.id === 'technical-customer');
+const smr = services.find((s) => s.id === 'smr');
+
+// Какое фото показывать у системы (только привязка к уже существующим фото из photos.mjs).
+const prefer: Record<string, string> = { teplosnabzhenie: 'teplotrassa-kamera', elektrosnabzhenie: 'elektromontazh', ventilyatsiya: 'ventkamera' };
+const photoFor = (slug: string) =>
+  photosOn ? photos.find((p) => p.id === prefer[slug]) ?? photos.find((p) => p.dir === slug) ?? null : null;
+const dirPreview = (slug: string) => (photosOn ? photos.find((p) => p.dir === slug && p.id !== prefer[slug]) ?? photoFor(slug) : null);
+const scopeOf = (d) => d.scopeGroups.flatMap((g) => g.items).slice(0, 4);
+const smrTitle = home.smr?.title ?? ui.smrTitle;
+const smrText = home.smr?.text ?? smr?.cardLead;
+const tzTitle = home.techCustomer?.title ?? ui.tzTitle;
+const tzNote = home.techCustomer?.text;
+const tzMore = home.techCustomer?.more;
+const missionNote = home.missionNote ?? ui.missionDraft;
+const pad = (i: number) => String(i + 1).padStart(2, '0');
+// Фото и ИИ-иллюстрации показываем раздельно: у иллюстраций своя полоса с пометкой «Иллюстрации»,
+// поэтому в подписи под кадром повторять «Иллюстрация:» не нужно (alt сохраняет полную подпись).
+const realPhotos = photos.filter((p) => !p.ai);
+const aiPhotos = photos.filter((p) => p.ai);
+const capOf = (p) => p.cap.replace(/^Иллюстрация:\s*/u, '').replace(/^./u, (c) => c.toUpperCase());
+---
+<Base title={home.title} description={home.description} path="/" home>
+  <!-- Первый экран -->
+  <section class="hero" data-hero>
+    <div class="hero-media">
+      <Pic src="/img/hero-trench.jpg" alt={ui.heroImageAlt} width={726} height={864} loading="eager" fetchpriority="high" imgClass="hero-img" parallax="0.08" />
+      <video class="hero-video" data-hero-video data-src="/video/hero-trench.mp4" poster="/video/hero-trench.jpg" muted loop playsinline preload="none" aria-hidden="true"></video>
+      <span class="hero-grade" aria-hidden="true"></span>
+      <span class="media-tag mono">{ui.illustration}</span>
+    </div>
+    <div class="container hero-grid">
+      <div class="hero-copy">
+        <p class="hero-kicker">{brand.tagline}</p>
+        <h1 class="hero-h1">{home.h1}</h1>
+        <p class="hero-lead">{home.lead}</p>
+        <div class="hero-cta">
+          <a class="btn btn-gold btn-lg" href="#intake">{cta.primary} <Icon name="arrow" size={20} /></a>
+          <a class="btn btn-ghost btn-lg" href="#intake">{cta.secondary}</a>
+        </div>
+        <p class="hero-eta mono"><Icon name="clock" size={16} /> {form.eyebrow}</p>
+        <ul class="hero-principles">
+          {principles.map((x) => <li>{x}</li>)}
+        </ul>
+      </div>
+      <div class="ribbon-wrap">
+        <p class="ribbon-cap mono" aria-hidden="true">{ui.routeAria}</p>
+        <ol class="ribbon" aria-label={ui.routeAria}>
+          {route.map((r, i) => (
+            <li style={`--i:${i}`}>
+              <span class="ribbon-node" data-pipe-start={i === route.length - 1 ? '' : undefined}><span class="mono">{r.n}</span></span>
+              <span class="ribbon-t">{r.t}</span>
+            </li>
+          ))}
+        </ol>
+      </div>
+    </div>
+  </section>
+
+  <!-- 01 Направления -->
+  <section class="section" id="napravleniya">
+    <div class="container">
+      <SectionHead n="01" label={ui.sections.directions} title={home.directions.title} text={home.directions.text} />
+      <ol class="dir-index">
+        {directions.map((d, i) => {
+          const ph = dirPreview(d.slug);
+          return (
+            <li class="rv" style={`--i:${i}`}>
+              <a href={`/napravleniya/${d.slug}/`}>
+                <span class="dir-n mono">{pad(i)}</span>
+                <span class="dir-ic"><Icon name={d.icon} size={30} /></span>
+                <span class="dir-name">{d.label}</span>
+                <span class="dir-lead">{d.cardLead}</span>
+                <span class="dir-go"><Icon name="arrow" size={22} /></span>
+                <span class="dir-peek" aria-hidden="true">
+                  {ph ? <Pic src={ph.src} alt="" width={750} height={1000} /> : <SystemPlate kind={d.slug} />}
+                </span>
+              </a>
+            </li>
+          );
+        })}
+      </ol>
+    </div>
+  </section>
+
+  <!-- 02 Услуги и работы -->
+  <section class="section paper" id="uslugi">
+    <div class="container">
+      <SectionHead n="02" label={ui.sections.services} title={home.services.title} text={home.services.text} />
+      <div class="svc-grid">
+        {mainServices.map((s, i) => (
+          <a class={`svc rv ${i === 0 ? 'svc-lead' : ''}`} style={`--i:${i}`} href={`/uslugi/${s.slug}/`}>
+            <span class="svc-top"><span class="mono">{pad(i)}</span><Icon name={s.icon} size={28} /></span>
+            <h3>{s.label}</h3>
+            <p>{s.cardLead}</p>
+            <span class="go">{ui.more} <Icon name="arrow" size={18} /></span>
+          </a>
+        ))}
+      </div>
+      <div class="works" id="raboty">
+        <div class="works-head rv">
+          <h3>{home.works.title}</h3>
+          <p>{home.works.text}</p>
+        </div>
+        <ul class="works-list">
+          {workServices.map((s, i) => (
+            <li class="rv" style={`--i:${i}`}>
+              <a href={`/uslugi/${s.slug}/`}>
+                <span class="mono">{pad(i)}</span>
+                <strong>{s.label}</strong>
+                <span class="works-lead">{s.cardLead}</span>
+                <Icon name="arrow" size={20} />
+              </a>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- 03 Технический заказчик -->
+  {tech && (
+    <section class="section tz" id="tekhzakazchik">
+      <div class="container tz-grid">
+        <div class="tz-media rv">
+          <div class="frame">
+            <Pic src="/img/itp-render.jpg" alt={ui.renderAlt} width={789} height={825} imgClass="frame-img" parallax="0.06" />
+            <span class="media-tag mono">{ui.illustration}</span>
+          </div>
+        </div>
+        <div class="tz-body">
+          <SectionHead n="03" label={ui.sections.tz} title={tzTitle} text={tech.lead} />
+          <ol class="tz-groups">
+            {tech.scopeGroups.map((g, i) => (
+              <li class="rv" style={`--i:${i}`}>
+                <h3><span class="mono">{pad(i)}</span>{g.title}</h3>
+                <ul class="dash">{g.items.map((x) => <li>{x}</li>)}</ul>
+              </li>
+            ))}
+          </ol>
+          {tzNote && <p class="tz-note rv">{tzNote}</p>}
+          <p class="tz-more rv"><a class="btn btn-ghost" href={`/uslugi/${tech.slug}/`}>{tzMore ?? `${tech.label}: ${ui.more.toLowerCase()}`} <Icon name="arrow" size={18} /></a></p>
+        </div>
+      </div>
+    </section>
+  )}
+
+  <!-- 04 СМР по системам -->
+  <section class="section smr" id="smr-po-sistemam">
+    <div class="container">
+      <SectionHead n="04" label={ui.sections.smr} title={smrTitle} text={smrText}>
+        {smr && <a class="link-arrow" href={`/uslugi/${smr.slug}/`}>{ui.smrAll} <Icon name="arrow" size={18} /></a>}
+      </SectionHead>
+    </div>
+    <div class="smr-rail-wrap">
+      <ol class="smr-rail container">
+        {directions.map((d, i) => {
+          const ph = photoFor(d.slug);
+          return (
+            <li class="smr-card rv" style={`--i:${i}`}>
+              <a href={`/napravleniya/${d.slug}/`}>
+                <span class="smr-media">
+                  {ph ? <Pic src={ph.src} alt={ph.alt} width={750} height={1000} imgClass="smr-img" parallax="0.05" /> : <SystemPlate kind={d.slug} />}
+                  <span class="smr-badge mono">{pad(i)}</span>
+                  {ph && <span class="smr-cap mono">{ph.cap}</span>}
+                </span>
+                <span class="smr-title"><Icon name={d.icon} size={22} /> {d.label}</span>
+                <ul class="dash">{scopeOf(d).map((x) => <li>{x}</li>)}</ul>
+                <span class="go">{ui.more} <Icon name="arrow" size={18} /></span>
+              </a>
+            </li>
+          );
+        })}
+      </ol>
+    </div>
+    {photosOn && <div class="container"><p class="note" data-placeholder>{photosNote}</p></div>}
+  </section>
+
+  <!-- 05 Маршрут проекта -->
+  <section class="section route-sec" id="marshrut">
+    <div class="container">
+      <SectionHead n="05" label={ui.sections.route} title={home.route.title} text={home.route.text} />
+      <Route items={route} />
+      <div class="stage rv">
+        <div>
+          <h3>{home.stage.title}</h3>
+          <p>{home.stage.text}</p>
+        </div>
+        <div class="chips">{stages.map((s) => <a class="chip" href={`/?stage=${s.id}#intake`}>{s.label}<Icon name="arrow" size={16} /></a>)}</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 06 Риски -->
+  <section class="section" id="riski">
+    <div class="container split">
+      <span class="pipe-anchor split-anchor" data-pipe-node aria-hidden="true"></span>
+      <div class="split-head">
+        <SectionHead n="06" label={ui.sections.risk} title={home.risk.title} text={home.risk.text} node={false} />
+      </div>
+      <ol class="risk-list">
+        {riskPoints.map((r, i) => (
+          <li class="rv" style={`--i:${i}`}>
+            <span class="risk-n mono">{pad(i)}</span>
+            <div><h3>{r.t}</h3><p>{r.d}</p></div>
+          </li>
+        ))}
+      </ol>
+    </div>
+  </section>
+
+  <!-- 07 Для кого -->
+  <section class="section paper" id="dlya-kogo">
+    <div class="container">
+      <SectionHead n="07" label={ui.sections.audiences} title={home.audiences.title} />
+      <ul class="aud">
+        {home.audiences.items.map((a, i) => (
+          <li class="rv" style={`--i:${i}`}><span class="mono">{pad(i)}</span><h3>{a.t}</h3><p>{a.d}</p></li>
+        ))}
+      </ul>
+    </div>
+  </section>
+
+  <!-- 08 С кем работаем -->
+  {clientsOn && (
+    <section class="section" id="zakazchiki">
+      <div class="container">
+        <SectionHead n="08" label={ui.sections.clients} title={clients.title} text={clients.text} />
+        <div class="clients">
+          {clients.groups.map((g, i) => (
+            <div class="client-group rv" style={`--i:${i}`}>
+              <h3 class="mono">{g.t}</h3>
+              <ul>{g.items.map((x) => <li>{x}</li>)}</ul>
+            </div>
+          ))}
+        </div>
+        <p class="note" data-placeholder>{clients.note}</p>
+      </div>
+    </section>
+  )}
+
+  <!-- 09 Фото -->
+  {photosOn && photos.length > 0 && (
+    <section class="section photos-sec" id="foto">
+      <div class="container">
+        <SectionHead n="09" label={ui.sections.photos} title={ui.photosTitle} />
+        <div class="gallery">
+          {realPhotos.map((p, i) => (
+            <figure class={`g-${i} rv`} style={`--i:${i}`}>
+              <div class="g-frame"><Pic src={p.src} alt={p.alt} width={750} height={1000} imgClass="g-img" parallax="0.04" /></div>
+              <figcaption><span class="mono">{pad(i)}</span>{p.cap}</figcaption>
+            </figure>
+          ))}
+        </div>
+        {aiPhotos.length > 0 && (
+          <div class="g-ai">
+            <p class="g-ai-label mono"><span>{ui.illustrations}</span><span class="g-ai-rule" aria-hidden="true"></span></p>
+            <div class="g-ai-row">
+              {aiPhotos.map((p, i) => (
+                <figure class="rv" style={`--i:${i}`}>
+                  <div class="g-frame"><Pic src={p.src} alt={p.alt} width={750} height={1000} imgClass="g-img" parallax="0.03" /></div>
+                  <figcaption><span class="mono">{pad(realPhotos.length + i)}</span>{capOf(p)}</figcaption>
+                </figure>
+              ))}
+            </div>
+          </div>
+        )}
+        <p class="note" data-placeholder>{photosNote}</p>
+      </div>
+    </section>
+  )}
+
+  <!-- 10 Принципы: энергоэффективность, производители, миссия -->
+  <section class="section principles-sec" id="principy">
+    <div class="container">
+      <SectionHead n="10" label={ui.sections.energy} title={energy.title} text={energy.text} />
+      <div class="pr-grid">
+        <div class="pr-card rv">
+          <h3>{manufacturers.title}</h3>
+          <p>{manufacturers.text}</p>
+        </div>
+        <ul class="pr-list rv">
+          {principles.map((x, i) => <li><span class="mono">{pad(i)}</span>{x}</li>)}
+        </ul>
+      </div>
+      <figure class="mission rv">
+        <figcaption class="mono">{mission.title} · <span class="mission-draft">{missionNote}</span></figcaption>
+        <blockquote>{mission.text}</blockquote>
+      </figure>
+      <div class="statusbox rv">
+        <h3>{companyBlock.title}</h3>
+        <p>{companyBlock.text}</p>
+      </div>
+    </div>
+  </section>
+
+  <IntakeForm />
+<script is:inline>
+  (function () {
+    var v = document.querySelector('[data-hero-video]'); if (!v) return;
+    var rm = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    var sd = navigator.connection && navigator.connection.saveData;
+    if (rm || sd) { v.remove(); return; }
+    v.src = v.dataset.src; v.addEventListener('playing', function () { v.classList.add('on'); });
+    var p = v.play(); if (p && p.catch) p.catch(function () {});
+  })();
+</script>
+</Base>

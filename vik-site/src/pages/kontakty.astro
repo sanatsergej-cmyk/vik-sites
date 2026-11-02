@@ -1,0 +1,51 @@
+---
+import Base from '../layouts/Base.astro';
+import Icon from '../components/Icon.astro';
+import IntakeForm from '../components/IntakeForm.astro';
+import { contacts, form, footer, brand } from '../content/index.mjs';
+const c = footer.contacts;
+---
+<Base
+  title={contacts.title}
+  description={contacts.description}
+  path="/kontakty/"
+  crumbs={[{ name: 'Главная', href: '/' }, { name: 'Контакты', href: '/kontakty/' }]}
+>
+  <section class="page-hero">
+    <div class="container ph-grid">
+      <div>
+        <p class="crumbs"><a href="/">Главная</a><span class="sep"></span>Контакты</p>
+        <p class="eyebrow">{brand.region}</p>
+        <h1>{contacts.h1}</h1>
+        <p class="lead">{contacts.lead}</p>
+      </div>
+      <div class="bezel ph-side">
+        <div class="bezel-core">
+          <ul class="contact-card">
+            <li><span class="k">{c.phone}</span><a href="tel:+79916663572">+7 991 666-35-72</a></li>
+            <li><span class="k">{c.email}</span><span data-placeholder>{c.pendingEmail}</span></li>
+            <li><span class="k">{c.telegram}</span><span data-placeholder>{c.pendingContact}</span></li>
+            <li><span class="k">{c.address}</span><span data-placeholder>{c.pendingAddress}</span></li>
+          </ul>
+          <a class="btn btn-gold" href="#intake" style="margin-top:20px"><span>{form.contactsTitle}</span><span class="btn-ico"><Icon name="arrow" size={16} /></span></a>
+        </div>
+      </div>
+    </div>
+  </section>
+  <section class="section">
+    <div class="container">
+      <div class="section-head" data-reveal><p class="eyebrow">Порядок</p><h2>{contacts.how.title}</h2></div>
+      <ol class="route-map">
+        {contacts.how.steps.map((r, i) => (
+          <li data-reveal style={`--i:${i}`}>
+            <span class="rm-st"><Icon name={['doc', 'clipboard', 'route'][i] ?? 'arrow'} size={26} /></span>
+            <span class="rm-n">{String(i + 1).padStart(2, '0')}</span>
+            <strong>{r.t}</strong>
+            <p>{r.d}</p>
+          </li>
+        ))}
+      </ol>
+    </div>
+  </section>
+  <IntakeForm title={form.contactsTitle} />
+</Base>

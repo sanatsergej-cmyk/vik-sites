@@ -1,0 +1,75 @@
+---
+import Base from '../layouts/Base.astro';
+import PageHero from '../components/PageHero.astro';
+import IntakeForm from '../components/IntakeForm.astro';
+import { about, riskPoints, home, glossary, principles, mission } from '../content.mjs';
+import { ui } from '../ui.mjs';
+const pad = (i: number) => String(i + 1).padStart(2, '0');
+const roles = [ui.sch.designer, ui.sch.builder, ui.sch.rso, ui.sch.expertise];
+const missionNote = home.missionNote ?? ui.missionDraft;
+---
+<Base title={about.title} description={about.description} path="/o-kompanii/" crumbs={[{ name: ui.home, href: '/' }, { name: ui.nav.about, href: '/o-kompanii/' }]}>
+  <PageHero crumbs={[{ name: ui.nav.about }]} title={about.h1} lead={about.lead} hl="60%">
+    <Fragment slot="aside">
+      <p class="pha-label mono">{ui.principlesTitle}</p>
+      <ol class="pha-list">{principles.map((x, i) => <li><span class="mono">{pad(i)}</span>{x}</li>)}</ol>
+    </Fragment>
+  </PageHero>
+
+  <section class="block joints-sec">
+    <div class="container">
+      <h2 class="block-title">{ui.aboutJoints}</h2>
+      <div class="joints rv" aria-hidden="true">
+        <div class="jr jr-broken">{roles.map((r) => <span class="jr-node">{r}</span>)}</div>
+        <div class="jr jr-one">{roles.map((r) => <span class="jr-node">{r}</span>)}</div>
+      </div>
+      <ol class="joints-list">
+        {riskPoints.map((r, i) => <li class="rv" style={`--i:${i}`}><span class="mono">{pad(i)}</span><h3>{r.t}</h3><p>{r.d}</p></li>)}
+      </ol>
+    </div>
+  </section>
+
+  <section class="block">
+    <div class="container">
+      <figure class="mission rv" style="margin-top:0">
+        <figcaption class="mono">{mission.title} · <span class="mission-draft">{missionNote}</span></figcaption>
+        <blockquote>{mission.text}</blockquote>
+      </figure>
+    </div>
+  </section>
+
+  <section class="block">
+    <div class="container cols-3-9">
+      <h2 class="block-title">{about.how.title}</h2>
+      <ol class="how">{about.how.items.map((r, i) => <li class="rv" style={`--i:${i}`}><span class="mono">{pad(i)}</span><div><h3>{r.t}</h3><p>{r.d}</p></div></li>)}</ol>
+    </div>
+  </section>
+
+  <section class="block">
+    <div class="container cols">
+      <div class="rv"><h2 class="block-title">{about.partners.title}</h2><p class="txt">{about.partners.text}</p></div>
+      <div class="rv"><h2 class="block-title">{about.geography.title}</h2><p class="txt">{about.geography.text}</p></div>
+    </div>
+  </section>
+
+  <section class="block paper">
+    <div class="container">
+      <h2 class="block-title">{home.audiences.title}</h2>
+      <ul class="aud">
+        {home.audiences.items.map((a, i) => <li class="rv" style={`--i:${i}`}><span class="mono">{pad(i)}</span><h3>{a.t}</h3><p>{a.d}</p></li>)}
+      </ul>
+    </div>
+  </section>
+
+  <section class="block">
+    <div class="container cols-3-9">
+      <h2 class="block-title">{ui.about.glossary}</h2>
+      <dl class="gloss">{glossary.map((g) => <><dt>{g.t}</dt><dd>{g.d}</dd></>)}</dl>
+    </div>
+  </section>
+
+  <section class="block">
+    <div class="container"><div class="statusbox" style="margin-top:0"><h3>{about.team.title}</h3><p>{about.team.text}</p></div></div>
+  </section>
+  <IntakeForm />
+</Base>

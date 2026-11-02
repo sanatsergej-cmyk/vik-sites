@@ -1,0 +1,9 @@
+---
+// <picture> с webp и jpg. src — путь к .jpg в public/.
+const { src, alt, width, height, class: cls = '', loading = 'lazy', fetchpriority, imgClass = '', parallax } = Astro.props;
+const webp = src.replace(/\.jpe?g$/i, '.webp');
+---
+<picture class={cls}>
+  <source srcset={webp} type="image/webp" />
+  <img class={imgClass} src={src} alt={alt} width={width} height={height} loading={loading} decoding="async" fetchpriority={fetchpriority} data-parallax={parallax} />
+</picture>

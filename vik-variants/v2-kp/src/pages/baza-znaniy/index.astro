@@ -1,0 +1,47 @@
+---
+// База знаний: редакционный индекс статей. Темы карточки — связанные услуги и направления статьи (поле related).
+import Base from '../../layouts/Base.astro';
+import PageHero from '../../components/PageHero.astro';
+import Icon from '../../components/Icon.astro';
+import IntakeForm from '../../components/IntakeForm.astro';
+import { articles, knowledgeBase, serviceByPath, directionByPath } from '../../content.mjs';
+import { ui } from '../../ui.mjs';
+const topics = (a) => a.related.map((p) => serviceByPath(p) ?? directionByPath(p)).filter(Boolean).slice(0, 3).map((x) => x.label);
+const fmt = (d) => new Date(d).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' });
+const pad = (i: number) => String(i + 1).padStart(2, '0');
+const [first, ...rest] = articles;
+---
+<Base title={knowledgeBase.title} description={knowledgeBase.description} path="/baza-znaniy/" crumbs={[{ name: ui.home, href: '/' }, { name: knowledgeBase.h1, href: '/baza-znaniy/' }]}>
+  <PageHero crumbs={[{ name: knowledgeBase.h1 }]} eyebrow={`${ui.kb.articles} · ${articles.length}`} title={knowledgeBase.h1} lead={knowledgeBase.lead} hl="35%" />
+  <section class="block kb-index">
+    <div class="container">
+      {first && (
+        <a class="kb-lead rv" href={`/baza-znaniy/${first.slug}/`}>
+          <span class="kb-num mono">{pad(0)}</span>
+          <div>
+            <p class="kb-meta mono"><span>{first.readMin} {ui.kb.read}</span><span>{ui.kb.updated} {fmt(first.updated)}</span></p>
+            <h2>{first.h1}</h2>
+            <p class="kb-lead-text">{first.lead}</p>
+            <ul class="kb-tags">{topics(first).map((t) => <li>{t}</li>)}</ul>
+          </div>
+          <span class="kb-go"><Icon name="arrow" size={24} /></span>
+        </a>
+      )}
+      <ol class="kb-list">
+        {rest.map((a, i) => (
+          <li class="rv" style={`--i:${i}`}>
+            <a href={`/baza-znaniy/${a.slug}/`}>
+              <span class="kb-num mono">{pad(i + 1)}</span>
+              <p class="kb-meta mono"><span>{a.readMin} {ui.kb.read}</span><span>{fmt(a.updated)}</span></p>
+              <h2>{a.h1}</h2>
+              <p>{a.description}</p>
+              <ul class="kb-tags">{topics(a).map((t) => <li>{t}</li>)}</ul>
+              <span class="go">{ui.more} <Icon name="arrow" size={18} /></span>
+            </a>
+          </li>
+        ))}
+      </ol>
+    </div>
+  </section>
+  <IntakeForm />
+</Base>

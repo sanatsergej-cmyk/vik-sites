@@ -1,0 +1,311 @@
+---
+// Волна 2: своя визуализация для каждой из 12 услуг. Тексты — из контента услуги, подписи схем — ui.dia.
+// data-mode="time": собирается один раз при появлении; data-mode="view": собирается по мере прокрутки.
+// Без JS и при prefers-reduced-motion всё видно сразу (классы .L активны только под html.anim).
+import { makeIso } from '../lib/iso.mjs';
+import IsoPipe from './IsoPipe.astro';
+import Callout from './Callout.astro';
+import { ui } from '../ui.mjs';
+const { s } = Astro.props;
+const D = ui.dia;
+const k = s.slug;
+const pad = (i) => String(i + 1).padStart(2, '0');
+const bow = (x, y, r = 8) => `M${x - r} ${y - r} L${x + r} ${y + r} L${x + r} ${y - r} L${x - r} ${y + r} Z`;
+
+// Проектирование: стопки листов П и Р
+let sheets = [];
+let sheetLines = [];
+if (k === 'proektirovanie-i-soglasovaniya') {
+  const I = makeIso(26);
+  [[0, 4], [8, 6]].forEach(([x0, cnt], si) => {
+    for (let i = 0; i < cnt; i++) sheets.push({ b: I.box(x0, 0, i * 0.36, 6, 4.2, 0.08), k: si * 0.5 + i * 0.12 });
+    const z = (cnt - 1) * 0.36 + 0.08;
+    sheetLines.push([I.path([[x0 + 0.8, 0.8, z], [x0 + 5.2, 0.8, z]]), I.path([[x0 + 0.8, 1.6, z], [x0 + 4, 1.6, z]]), I.path([[x0 + 4.2, 2.4, z], [x0 + 5.2, 2.4, z], [x0 + 5.2, 3.4, z], [x0 + 4.2, 3.4, z], [x0 + 4.2, 2.4, z]])].join(' '));
+  });
+}
+
+// Монтаж трубопровода: секции
+let pipeSegs = [];
+let bed;
+let gauge;
+if (k === 'montazh-truboprovoda') {
+  const I = makeIso(30);
+  bed = I.box(0, 0, -0.5, 14.2, 2, 0.5);
+  for (let i = 0; i < 5; i++) {
+    const x0 = 0.3 + i * 2.7;
+    const n = I.p(x0 + 1.3, 1, 1.25);
+    pipeSegs.push({ d: I.path([[x0, 1, 0.35], [x0 + 2.6, 1, 0.35]]), ring: I.section('x', x0 + 2.6, 1, 0.35, 0.36), nx: n[0], ny: n[1], k: 0.2 + i * 0.75 });
+  }
+  const g = I.p(14.2, 1, 0.35), g2 = I.p(14.2, 1, 1.6);
+  gauge = { stem: `M${g[0]} ${g[1]} L${g2[0]} ${g2[1]}`, cx: g2[0], cy: g2[1] - 14 };
+}
+
+// ИТП: изометрия узла
+let itp = null;
+if (k === 'proektirovanie-itp') {
+  const I = makeIso(34);
+  const fl = I.box(0, 0, -0.15, 9, 6, 0.15);
+  const hx = I.box(2, 0.9, 0, 1.2, 0.9, 2.5);
+  const pump = I.cyl(5, 3.5, 0.15, 1.0, 0.38);
+  const mt = I.box(6.6, 1.15, 1.65, 0.7, 0.5, 0.5);
+  const v = I.p(1, 1.5, 1.8);
+  const C = (x, y, z, lx, ly) => { const [ax, ay] = I.p(x, y, z); return { ax, ay, lx, ly }; };
+  itp = {
+    fl, hx, pump, mt, v,
+    pipes: [
+      { d: I.path([[0, 1.5, 1.8], [2, 1.5, 1.8]]), c: 'var(--sys-heat)', k: 0.5 },
+      { d: I.path([[2, 2.2, 0.6], [0, 2.2, 0.6]]), c: 'var(--sys-ret)', k: 0.6 },
+      { d: I.path([[3.2, 1.3, 1.9], [8.4, 1.3, 1.9], [8.4, 1.3, 3.2]]), c: 'var(--sys-heat)', k: 1.0 },
+      { d: I.path([[8.4, 3.5, 3.2], [8.4, 3.5, 0.55], [5.4, 3.5, 0.55]]), c: 'var(--sys-ret)', k: 1.1 },
+      { d: I.path([[4.6, 3.5, 0.55], [3.6, 3.5, 0.55], [3.6, 1.6, 0.55], [3.2, 1.6, 0.55]]), c: 'var(--sys-ret)', k: 1.2 },
+    ],
+    co: [
+      { ...C(2.6, 0.9, 2.5, -150, -110), text: D.itpParts[0] },
+      { ...C(5, 3.5, 1.0, 40, 250), text: D.itpParts[1] },
+      { ...C(6.95, 1.15, 2.15, 250, -60), text: D.itpParts[2] },
+      { ...C(1, 1.5, 1.8, -170, -40), text: D.itpParts[3] },
+    ].map((c, i) => ({ ...c, idx: String(i + 1), k: 1.6 + i * 0.1 })),
+  };
+}
+
+// Экспертиза: цикл
+const cyc = (() => {
+  const cx = 210, cy = 205, r = 122;
+  const pt = (a) => [cx + r * Math.cos((a * Math.PI) / 180), cy + r * Math.sin((a * Math.PI) / 180)].map((v) => Math.round(v * 10) / 10);
+  const nodes = [-90, 30, 150];
+  const arcs = nodes.map((a, i) => { const [x1, y1] = pt(a + 16), [x2, y2] = pt(a + 104); return `M${x1} ${y1} A${r} ${r} 0 0 1 ${x2} ${y2}`; });
+  const heads = nodes.map((a) => { const b = a + 104, [x, y] = pt(b); return { x, y, rot: b + 90 }; });
+  return { cx, cy, r, nodes: nodes.map(pt), arcs, heads };
+})();
+
+// РСО: организации из блока extra
+const orgs = k === 'soglasovanie-rso' ? (s.extra?.[0]?.items ?? []).map((x) => { const [a, ...b] = x.split(/\s—\s/); return { sys: a, org: b.join(' — ') }; }) : [];
+const orgNote = k === 'soglasovanie-rso' ? s.extra?.[0]?.note : null;
+
+// СМР: таймлайн площадки
+const smrRows = k === 'smr' ? [...(s.scopeGroups[0]?.items ?? [])] : [];
+const smrDoc = k === 'smr' ? s.scopeGroups[2]?.items?.[3] : null;
+---
+{k === 'tekhnicheskiy-zakazchik' && (
+  <figure class="sv sv-hub">
+    <svg class="svz" viewBox="0 0 560 420" role="img" aria-label={`${D.customer}, ${D.vik}, ${D.designer}, ${D.rso}, ${D.contractors}`} data-scene data-mode="time" data-steps="2">
+      <g class="L" data-k="0.3" data-d="0.6"><path class="lnk main draw" d="M280 74 V148" pathLength="1" /></g>
+      <g class="L" data-k="0.7" data-d="0.6">
+        <path class="lnk draw" d="M244 247 L132 322" pathLength="1" /><path class="lnk draw" d="M280 262 V362" pathLength="1" /><path class="lnk draw" d="M316 247 L428 322" pathLength="1" />
+      </g>
+      <g class="L fade" data-k="1.3" data-d="0.4">
+        <path class="flowd" d="M280 74 V148" /><path class="flowd" d="M244 247 L132 322" /><path class="flowd rev" d="M280 262 V362" /><path class="flowd" d="M316 247 L428 322" />
+      </g>
+      <g class="L fade" data-k="0" data-d="0.4"><rect class="pill" x="190" y="30" width="180" height="44" rx="22" /><text class="pt" x="280" y="58">{D.customer}</text></g>
+      <g class="L fade" data-k="0.2" data-d="0.4"><circle class="hubc" cx="280" cy="205" r="57" /><circle class="hubr" cx="280" cy="205" r="70" /><text class="pt big" x="280" y="214">{D.vik}</text></g>
+      <g class="L fade" data-k="1.0" data-d="0.4"><rect class="pill o" x="12" y="322" width="176" height="44" rx="22" /><text class="pt" x="100" y="350">{D.designer}</text></g>
+      <g class="L fade" data-k="1.1" data-d="0.4"><rect class="pill o" x="220" y="362" width="120" height="44" rx="22" /><text class="pt" x="280" y="390">{D.rso}</text></g>
+      <g class="L fade" data-k="1.2" data-d="0.4"><rect class="pill o" x="372" y="322" width="176" height="44" rx="22" /><text class="pt" x="460" y="350">{D.contractors}</text></g>
+    </svg>
+  </figure>
+)}
+
+{k === 'proektirovanie-i-soglasovaniya' && (
+  <figure class="sv sv-sheets">
+    <svg class="svz iso" viewBox="-120 -100 580 380" role="img" aria-label={`${D.stageP}, ${D.stageR}`} data-scene data-mode="time" data-steps="2">
+      {sheets.map((x) => (
+        <g class="L rise sheet" data-k={x.k} data-d="0.35">
+          <polygon class="sh-l" points={x.b.left} /><polygon class="sh-r" points={x.b.right} /><polygon class="sh-t" points={x.b.top} />
+        </g>
+      ))}
+      <g class="L fade" data-k="1.3" data-d="0.4">{sheetLines.map((d) => <path class="sh-ln" d={d} />)}</g>
+      <g class="L" data-k="1.4" data-d="0.6"><path class="route draw" d="M200 113 C250 40 285 22 314 22 M330 38 C362 80 370 108 370 132" pathLength="1" /></g>
+      <g class="L fade" data-k="1.8" data-d="0.4">
+        <circle class="stamp" cx="330" cy="22" r="16" /><path class="ok" d="M323 22 l5 5 l9 -10" /><text class="pt sm" x="330" y="-6">{D.rso}</text>
+        <circle class="stamp" cx="370" cy="150" r="16" /><path class="ok" d="M363 150 l5 5 l9 -10" /><text class="pt sm" x="370" y="190">{D.expert}</text>
+      </g>
+      <text class="pt sm l" x="-104" y="150">{D.stageP}</text>
+      <text class="pt sm l" x="96" y="262">{D.stageR}</text>
+    </svg>
+  </figure>
+)}
+
+{k === 'soglasovanie-rso' && (
+  <figure class="sv sv-orgs">
+    <p class="mono-label">{ui.page.orgsMap}</p>
+    <div class="orgmap">
+      <div class="org-doc" aria-hidden="true">
+        <svg viewBox="0 0 64 80"><path d="M6 4 H42 L58 20 V76 H6 Z M42 4 V20 H58" /><path class="dl" d="M14 32 H48 M14 42 H48 M14 52 H36" /><circle class="st" cx="44" cy="62" r="8" /></svg>
+        <span class="mono">{D.doc}</span>
+      </div>
+      <ul class="org-list">
+        {orgs.map((o, i) => <li style={`--i:${i}`}><span class="mono">{o.sys}</span><strong>{o.org}</strong></li>)}
+      </ul>
+    </div>
+    {orgNote && <figcaption class="small muted">{orgNote}</figcaption>}
+  </figure>
+)}
+
+{k === 'smr' && (
+  <figure class="sv sv-gantt" data-scene data-mode="view" data-steps="2">
+    <p class="mono-label">{D.site}</p>
+    <ol class="gantt">
+      {smrRows.map((x, i) => (
+        <li style={`--s:${i * 15}%;--w:${34 + (i % 2) * 6}%`}>
+          <span class="g-lab">{x}</span>
+          <span class="g-track"><span class="g-bar L" data-k={i * 0.25} data-d="0.5"></span></span>
+        </li>
+      ))}
+      {smrDoc && (
+        <li class="g-doc" style="--s:0%;--w:100%">
+          <span class="g-lab">{smrDoc}</span>
+          <span class="g-track"><span class="g-bar L" data-k="0" data-d="1.8"></span></span>
+        </li>
+      )}
+    </ol>
+    <figcaption class="small muted">{D.note}</figcaption>
+  </figure>
+)}
+
+{k === 'dokumentatsiya-i-sdacha' && (
+  <figure class="sv sv-stack">
+    <p class="mono-label">{ui.page.stack}</p>
+    <div class="dstack">
+      {s.scopeGroups.map((g, i) => (
+        <details class="dsheet" open={i === 0} style={`--i:${i}`}>
+          <summary><span class="mono">{pad(i)}</span><strong>{g.title}</strong><small class="mono">{g.items.length}</small></summary>
+          <ul class="tick-list">{g.items.map((x) => <li>{x}</li>)}</ul>
+        </details>
+      ))}
+    </div>
+    <figcaption class="small muted">{ui.page.stackHint}</figcaption>
+  </figure>
+)}
+
+{k === 'zemlyanye-raboty' && (
+  <figure class="sv sv-soil">
+    <svg class="svz" viewBox="0 0 560 330" role="img" aria-label={`${D.trench}, ${D.hdd}`} data-scene data-mode="view" data-steps="2.4">
+      <defs><pattern id="sv-h" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="8" /></pattern>
+        <pattern id="sv-dot" width="10" height="10" patternUnits="userSpaceOnUse"><circle cx="2" cy="2" r="1" /><circle cx="7" cy="7" r="0.8" /></pattern></defs>
+      <rect class="ly l0" x="0" y="60" width="560" height="18" />
+      <rect class="ly l1" x="0" y="78" width="560" height="70" />
+      <rect class="ly l1 hx" x="0" y="78" width="560" height="70" />
+      <rect class="ly l2" x="0" y="148" width="560" height="96" />
+      <rect class="ly l3" x="0" y="244" width="560" height="86" />
+      <rect class="ly l3 dt" x="0" y="244" width="560" height="86" />
+      <path class="gl" d="M0 60 H560" />
+      {D.layers.map((t, i) => <text class="pt sm l" x="10" y={[74, 120, 200, 292][i]}>{t}</text>)}
+      <g class="L fade" data-k="0.2" data-d="0.6"><path class="cut" d="M170 60 L190 232 L270 232 L290 60 Z" /></g>
+      <g class="L" data-k="0.2" data-d="0.8"><path class="route draw" d="M170 60 L190 232 L270 232 L290 60" pathLength="1" /></g>
+      <g class="L fade" data-k="0.9" data-d="0.4"><path class="strut" d="M178 110 H282 M185 170 H275 M182 60 V232 M278 60 V232" /></g>
+      <g class="L fade" data-k="1.1" data-d="0.4"><circle class="pipe-c" cx="230" cy="214" r="14" /><text class="pt sm" x="230" y="48">{D.trench}</text></g>
+      <rect class="road" x="352" y="54" width="168" height="6" />
+      <g class="L fade" data-k="1.2" data-d="0.3"><rect class="pit" x="322" y="60" width="18" height="34" /><rect class="pit" x="530" y="60" width="18" height="34" /></g>
+      <g class="L" data-k="1.4" data-d="0.9"><path class="bore draw" d="M331 94 C362 262 508 262 539 94" pathLength="1" /></g>
+      <g class="L fade" data-k="2.1" data-d="0.3"><text class="pt sm" x="435" y="276">{D.hdd}</text></g>
+    </svg>
+    <figcaption class="small muted">{D.note}</figcaption>
+  </figure>
+)}
+
+{k === 'montazh-truboprovoda' && (
+  <figure class="sv sv-pipe">
+    <svg class="svz iso" viewBox="-80 -70 470 340" role="img" aria-label={s.label} data-scene data-mode="view" data-steps="4.6">
+      <g class="bx bed"><polygon class="bx-l" points={bed.left} /><polygon class="bx-r" points={bed.right} /><polygon class="bx-t" points={bed.top} /><path class="bx-e" d={bed.edges} /></g>
+      {pipeSegs.map((g, i) => (
+        <g class="L seg" data-k={g.k} data-d="0.7">
+          <IsoPipe d={g.d} c="var(--sys-water)" w={16} />
+          <polygon class="ring" points={g.ring} />
+          <text class="pt sm seg-n" x={g.nx} y={g.ny}>{pad(i)}</text>
+        </g>
+      ))}
+      <g class="L fade" data-k="4.0" data-d="0.5">
+        <path class="stem" d={gauge.stem} /><circle class="gauge" cx={gauge.cx} cy={gauge.cy} r="16" /><path class="needle" d={`M${gauge.cx} ${gauge.cy} l9 -8`} />
+      </g>
+    </svg>
+    <figcaption class="small muted">{D.note}</figcaption>
+  </figure>
+)}
+
+{k === 'montazh-kabelya' && (
+  <figure class="sv sv-cable">
+    <svg class="svz" viewBox="0 0 560 270" role="img" aria-label={`${D.tp}, ${D.kl}, ${D.cableIn}`} data-scene data-mode="view" data-steps="2">
+      <rect class="soil" x="0" y="110" width="560" height="160" />
+      <path class="gl" d="M0 110 H560" />
+      <rect class="unit" x="12" y="62" width="50" height="48" /><text class="pt sm" x="37" y="52">{D.tp}</text>
+      <rect class="bld" x="440" y="16" width="110" height="94" /><rect class="bsm" x="440" y="110" width="110" height="90" />
+      <rect class="road" x="226" y="104" width="110" height="6" />
+      <rect class="sleeve" x="222" y="203" width="118" height="24" rx="4" />
+      <g class="L" data-k="0.1" data-d="1.4"><path class="cab draw" d="M37 110 V190 H200 C214 190 220 215 236 215 H326 C342 215 348 190 362 190 H452 V150 H486" pathLength="1" /></g>
+      <g class="L fade" data-k="0.6" data-d="0.4"><path class="tape" d="M44 165 H200 M362 165 H440" /></g>
+      <g class="L fade" data-k="1.0" data-d="0.3"><rect class="muff" x="112" y="180" width="22" height="20" /><rect class="muff" x="392" y="180" width="22" height="20" /><text class="pt sm" x="123" y="226">{D.muff}</text></g>
+      <g class="L fade" data-k="1.5" data-d="0.4"><text class="pt sm e" x="444" y="138">{D.cableIn}</text><text class="pt sm" x="281" y="252">{D.kl}</text></g>
+    </svg>
+  </figure>
+)}
+
+{k === 'proektirovanie-itp' && itp && (
+  <figure class="sv sv-itp">
+    <svg class="svz iso" viewBox="-200 -150 560 440" role="img" aria-label={`${D.itp}: ${D.itpParts.join(', ')}`} data-scene data-mode="time" data-steps="2">
+      <g class="L fade" data-k="0" data-d="0.4"><polygon class="g-top" points={itp.fl.top} /><polygon class="g-face g-left" points={itp.fl.left} /><polygon class="g-face g-right" points={itp.fl.right} /><path class="g-edge" d={itp.fl.edges} /></g>
+      <g class="L rise bx unit-b" data-k="0.3" data-d="0.4" style="--c:var(--sys-heat)"><polygon class="bx-l" points={itp.hx.left} /><polygon class="bx-r" points={itp.hx.right} /><polygon class="bx-t" points={itp.hx.top} /><path class="bx-e" d={itp.hx.edges} /></g>
+      {itp.pipes.map((x) => <IsoPipe d={x.d} c={x.c} w={7} k={x.k} dur={0.5} />)}
+      <g class="L fade" data-k="1.3" data-d="0.3" style="--c:var(--sys-ret)"><path class="cyl-side" d={itp.pump.sides} /><ellipse class="cyl-top" cx={itp.pump.top.cx} cy={itp.pump.top.cy} rx={itp.pump.top.rx} ry={itp.pump.top.ry} /></g>
+      <g class="L fade bx" data-k="1.35" data-d="0.3" style="--c:var(--acc)"><polygon class="bx-l" points={itp.mt.left} /><polygon class="bx-r" points={itp.mt.right} /><polygon class="bx-t" points={itp.mt.top} /><path class="bx-e" d={itp.mt.edges} /></g>
+      <g class="L fade" data-k="1.4" data-d="0.3"><path class="valve" style="--c:var(--sys-heat)" d={bow(itp.v[0], itp.v[1], 8)} /></g>
+      {itp.co.map((c) => <Callout {...c} wrap={18} />)}
+    </svg>
+    <ol class="legend sv-legend">{itp.co.map((c) => <li><span class="legend-n">{c.idx}</span>{c.text}</li>)}</ol>
+  </figure>
+)}
+
+{k === 'tekhprisoedinenie-i-tu' && (
+  <figure class="sv sv-quest">
+    <svg class="svz" viewBox="0 0 400 300" role="img" aria-label={`${ui.page.quest}: ${s.steps.map((x) => x.t).join(', ')}`} data-scene data-mode="time" data-steps="2">
+      <path class="qpath" d="M40 60 H330 C372 60 372 150 330 150 H70 C28 150 28 240 70 240 H350" />
+      <g class="L" data-k="0" data-d="1.4"><path class="route draw" d="M40 60 H330 C372 60 372 150 330 150 H70 C28 150 28 240 70 240 H350" pathLength="1" /></g>
+      {[[60, 60], [240, 60], [262, 150], [96, 150], [200, 240]].slice(0, s.steps.length).map(([x, y], i) => (
+        <g class="L fade" data-k={0.2 + i * 0.28} data-d="0.3"><circle class="qn" cx={x} cy={y} r="17" /><text class="pt sm b" x={x} y={y + 5}>{i + 1}</text></g>
+      ))}
+      <g class="L fade" data-k="1.6" data-d="0.3"><path class="flag" d="M350 240 V196 M350 198 H378 L370 208 L378 218 H350" /></g>
+    </svg>
+  </figure>
+)}
+
+{k === 'vynos-setey' && (
+  <div class="sv sv-ba">
+    {[0, 1].map((ph) => (
+      <figure class="ba">
+        <svg class="svz" viewBox="0 0 280 220" role="img" aria-label={ui.page.beforeAfter[ph]} data-scene={ph ? '' : undefined} data-mode={ph ? 'view' : undefined} data-steps={ph ? 2 : undefined}>
+          <defs><pattern id={`ba-h${ph}`} width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="8" /></pattern></defs>
+          <rect class="plot" x="10" y="10" width="260" height="190" />
+          <rect class="fp" x="84" y="64" width="112" height="92" fill={`url(#ba-h${ph})`} />
+          <text class="pt sm" x="140" y="114">{D.footprint}</text>
+          {ph === 0 ? (
+            <g><path class="old" d="M10 128 H270" /><circle class="mh o" cx="46" cy="128" r="7" /><circle class="mh o" cx="140" cy="128" r="7" /><circle class="mh o" cx="234" cy="128" r="7" /></g>
+          ) : (
+            <g>
+              <path class="ghost" d="M10 128 H270" />
+              <path class="x" d="M110 120 l12 16 M122 120 l-12 16 M158 120 l12 16 M170 120 l-12 16" />
+              <g class="L" data-k="0.1" data-d="1.2"><path class="new draw" d="M10 128 H46 V36 H234 V128 H270" pathLength="1" /></g>
+              <g class="L fade" data-k="1.2" data-d="0.3"><circle class="mh" cx="46" cy="128" r="7" /><circle class="mh" cx="46" cy="36" r="7" /><circle class="mh" cx="234" cy="36" r="7" /><circle class="mh" cx="234" cy="128" r="7" /></g>
+            </g>
+          )}
+          <text class="pt xs l" x="16" y="190">{ph === 0 ? D.oldNet : D.newNet}</text>
+        </svg>
+        <figcaption class="mono">{ui.page.beforeAfter[ph]}</figcaption>
+      </figure>
+    ))}
+  </div>
+)}
+
+{k === 'ekspertiza' && (
+  <figure class="sv sv-cycle">
+    <svg class="svz" viewBox="0 0 420 400" role="img" aria-label={`${ui.page.cycle}: ${D.remark}, ${D.answer}, ${D.fix}`} data-scene data-mode="time" data-steps="2">
+      <circle class="ring0" cx={cyc.cx} cy={cyc.cy} r={cyc.r} />
+      {cyc.arcs.map((a, i) => <g class="L" data-k={0.2 + i * 0.4} data-d="0.45"><path class="route draw" d={a} pathLength="1" /></g>)}
+      <g class="L fade" data-k="1.4" data-d="0.3">{cyc.heads.map((h) => <path class="ahead" d="M-7 -6 L0 6 L7 -6" transform={`translate(${h.x} ${h.y}) rotate(${h.rot})`} />)}</g>
+      {cyc.nodes.map(([x, y], i) => <g class="L fade" data-k={i * 0.4} data-d="0.3"><circle class="qn" cx={x} cy={y} r="20" /><text class="pt sm b" x={x} y={y + 5}>{i + 1}</text></g>)}
+      <text class="pt" x={cyc.nodes[0][0]} y={cyc.nodes[0][1] - 32}>{D.remark}</text>
+      <text class="pt" x={cyc.nodes[1][0]} y={cyc.nodes[1][1] + 46}>{D.answer}</text>
+      <text class="pt" x={cyc.nodes[2][0]} y={cyc.nodes[2][1] + 46}>{D.fix}</text>
+      <circle class="hubr" cx={cyc.cx} cy={cyc.cy} r="62" /><text class="pt sm" x={cyc.cx} y={cyc.cy - 4}>{D.expert}</text><text class="pt xs dim" x={cyc.cx} y={cyc.cy + 18}>{D.resubmit}</text>
+      <g class="spin"><circle class="dot" cx={cyc.cx} cy={cyc.cy - cyc.r} r="6" /></g>
+    </svg>
+  </figure>
+)}

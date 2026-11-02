@@ -1,0 +1,230 @@
+---
+import Base from '../../layouts/Base.astro';
+import Icon from '../../components/Icon.astro';
+import Pic from '../../components/Pic.astro';
+import IntakeForm from '../../components/IntakeForm.astro';
+import Gallery from '../../components/Gallery.astro';
+import SystemArt from '../../components/SystemArt.astro';
+import { directions, serviceByPath, articles, cta } from '../../content/index.mjs';
+import { photos } from '../../content/photos.mjs';
+import { dirVisual, photosOn, artLabel } from '../../data/visual';
+
+export function getStaticPaths() {
+  return directions.map((d) => ({ params: { slug: d.slug }, props: { d } }));
+}
+const { d } = Astro.props;
+const v = dirVisual[d.slug];
+const path = `/napravleniya/${d.slug}/`;
+const related = d.related.map((r: string) => serviceByPath(r)).filter(Boolean);
+const hasPhotos = photosOn && photos.some((p) => p.dir === d.slug);
+const idx = directions.findIndex((x) => x.slug === d.slug);
+const pad = (i: number) => String(i + 1).padStart(2, '0');
+const reads = articles.filter((a: any) => a.related.includes(path)).slice(0, 3);
+// подписи шагов по теме системы (вода — участки потока, тепло — пара линий, электро — участки цепи, вентиляция — зоны здания, газ — трасса)
+const stepsTitle: Record<string, string> = { vodosnabzhenie: 'Путь воды: от баланса до сдачи', teplosnabzhenie: 'Подающая и обратная: маршрут работ', elektrosnabzhenie: 'Цепь работ: участок за участком', ventilyatsiya: 'Зоны здания: от венткамеры до кровли', gazosnabzhenie: 'Трасса работ: от точки подключения до объекта' };
+---
+<Base
+  title={d.title}
+  description={d.description}
+  path={path}
+  crumbs={[{ name: 'Главная', href: '/' }, { name: d.label, href: path }]}
+>
+  <div class="dir-page" style={`--hue:${v.hue}`}>
+    <section class="page-hero">
+      <div class="container ph-grid">
+        <div class="ph-copy">
+          <p class="crumbs"><a href="/">Главная</a><span class="sep"></span><a href="/#napravleniya">Направления</a><span class="sep"></span>{d.label}</p>
+          <span class="ph-icon"><Icon name={d.icon} size={32} /></span>
+          <p class="eyebrow">{d.eyebrow} {pad(idx)} / {pad(directions.length - 1)}</p>
+          <h1>{d.h1}</h1>
+          <p class="lead">{d.lead}</p>
+          <p class="ph-meta"><span><strong>Объекты:</strong> {d.objects}</span></p>
+          <a class="btn btn-gold" href={`?direction=${d.slug}#intake`}><span>{cta.primary}</span><span class="btn-ico"><Icon name="arrow" size={16} /></span></a>
+        </div>
+        <div class="ph-art">
+          <div class="bezel"><div class="bezel-core"><SystemArt slug={d.slug} /></div></div>
+          <p class="ph-art-caption"><span>Схема системы</span><span>{d.label}</span></p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section sit-sec">
+      <div class="container">
+        <div class="section-head" data-reveal><p class="eyebrow">Ситуации</p><h2>Когда к нам обращаются</h2></div>
+        <ol class="sit-strip" style={`--c:${d.situations.length === 6 ? 3 : Math.min(5, d.situations.length)}`}>
+          {d.situations.map((x: string, i: number) => <li data-reveal style={`--i:${i}`}><span class="ss-n">{pad(i)}</span><p>{x}</p></li>)}
+        </ol>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container two">
+        <div data-reveal>
+          <p class="eyebrow">Состав</p>
+          <h2>Что входит в направление</h2>
+          {d.scopeGroups.map((g: { title: string; items: string[] }) => (
+            <div class="group">
+              <h3>{g.title}</h3>
+              <ul class="list">{g.items.map((x) => <li>{x}</li>)}</ul>
+            </div>
+          ))}
+        </div>
+        <div class="dir-side">
+          <div class="bezel panel" data-reveal style="--i:1">
+            <div class="bezel-core">
+              <h2>Что нужно для первичной оценки</h2>
+              <ul class="ticks">{d.inputs.map((x: string) => <li><Icon name="check" size={16} />{x}</li>)}</ul>
+              <p class="muted small" style="margin:16px 0 0">Если документов пока нет, достаточно описания задачи.</p>
+            </div>
+          </div>
+          <div class="bezel panel" data-reveal style="--i:2">
+            <div class="bezel-core">
+              <h2>{d.approvers.title}</h2>
+              <p style="margin:0">{d.approvers.text}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container">
+        <div class="section-head split" data-reveal>
+          <div><p class="eyebrow">Работы</p><h2>Какая работа нужна</h2></div>
+          <p>Откройте страницу работы: направление сохранится в заявке.</p>
+        </div>
+        <div class="rel-list">
+          {related.map((s: any) => (
+            <a class="rel-row" href={`/uslugi/${s.slug}/?direction=${d.slug}`} data-reveal>
+              <Icon name={s.icon} size={26} />
+              <span class="rr-t">{s.label}</span>
+              <span class="rr-l">{s.cardLead}</span>
+              <span class="ix-go"><Icon name="arrow" size={16} /></span>
+            </a>
+          ))}
+        </div>
+      </div>
+    </section>
+
+    {hasPhotos ? (
+      <Gallery dir={d.slug} title="Инженерные системы вблизи" eyebrow={d.label} />
+    ) : v.art ? (
+      <section class="section">
+        <div class="container">
+          <figure class="art-figure" data-reveal>
+            <div class="art-img">
+              <Pic base={v.art} alt={v.artAlt} width={v.artW} height={v.artH} sizes="(max-width: 760px) 92vw, 60vw" />
+              <span class="media-label">{artLabel}</span>
+            </div>
+            <figcaption>
+              <p class="eyebrow">{d.label}</p>
+              <h2>Сети и оборудование</h2>
+              <p>{d.cardLead}</p>
+              <p class="small" data-placeholder>Иллюстрация, не фото объекта.</p>
+            </figcaption>
+          </figure>
+        </div>
+      </section>
+    ) : null}
+
+    <section class="section">
+      <div class="container">
+        <div class="section-head split" data-reveal><div><p class="eyebrow">Маршрут</p><h2>{stepsTitle[d.slug] ?? 'Маршрут работ'}</h2></div><p>{d.cardLead}</p></div>
+        <ol class:list={['dsteps', `dsteps--${d.slug}`]}>
+          {d.steps.map((r: { t: string; d: string }, i: number) => (
+            <li data-step style={`--i:${i}`}>
+              <span class="ds-node"><span>{pad(i)}</span></span>
+              <div class="ds-body"><strong>{r.t}</strong><p>{r.d}</p></div>
+            </li>
+          ))}
+        </ol>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container norms-grid">
+        <div data-reveal>
+          <p class="eyebrow">Нормативы</p>
+          <h2>На что опираемся</h2>
+          <p class="muted">Требования к сетям, подключению и документации по системе «{d.label}».</p>
+          <p class="norms-date">Сверено на 01.11.2026</p>
+        </div>
+        <div class="table-wrap" data-reveal style="--i:1">
+          <table class="norms">
+            <thead><tr><th scope="col">Документ</th><th scope="col">Предмет</th></tr></thead>
+            <tbody>{d.norms.map((n: { t: string; d: string }) => <tr><th scope="row">{n.t}</th><td>{n.d}</td></tr>)}</tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container">
+        <div class="section-head" data-reveal><p class="eyebrow">Риски</p><h2>Частые ошибки и как их избегаем</h2></div>
+        <ol class="pitfalls">
+          {d.pitfalls.map((x: { t: string; d: string }, i: number) => (
+            <li data-reveal style={`--i:${i}`}>
+              <div class="pf-bad"><span class="pf-k">Ошибка {pad(i)}</span><strong>{x.t}</strong></div>
+              <div class="pf-good"><span class="pf-k">Как избегаем</span><p>{x.d}</p></div>
+            </li>
+          ))}
+        </ol>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container two">
+        <div class="bezel panel" data-reveal>
+          <div class="bezel-core">
+            <p class="eyebrow">Результат</p>
+            <h2>Что вы получите</h2>
+            <ul class="ticks">{d.outputs.map((x: string) => <li><Icon name="check" size={16} />{x}</li>)}</ul>
+          </div>
+        </div>
+        <div class="bezel panel out-cta" data-reveal style="--i:1">
+          <div class="bezel-core">
+            <span class="ph-icon"><Icon name={d.icon} size={30} /></span>
+            <h2>{d.label}: первичная оценка</h2>
+            <ul class="ticks">{d.inputs.slice(0, 3).map((x: string) => <li><Icon name="doc" size={16} />{x}</li>)}</ul>
+            <a class="btn btn-gold" href={`?direction=${d.slug}#intake`}><span>{cta.primary}</span><span class="btn-ico"><Icon name="arrow" size={16} /></span></a>
+          </div>
+        </div>
+      </div>
+      {reads.length > 0 && (
+        <div class="container reads">
+          <p class="eyebrow">База знаний</p>
+          <div class="reads-grid">
+            {reads.map((a: any) => (
+              <a class="read-card" href={`/baza-znaniy/${a.slug}/`}><span class="rc-meta">{a.readMin} мин чтения</span><strong>{a.h1}</strong><span class="link-go">Читать <span class="btn-ico"><Icon name="arrow" size={14} /></span></span></a>
+            ))}
+          </div>
+        </div>
+      )}
+    </section>
+
+    <section class="section">
+      <div class="container two faq-wrap">
+        <div data-reveal><p class="eyebrow">Вопросы</p><h2>Вопросы по направлению</h2></div>
+        <div class="faq">
+          {d.faq.map((f: { q: string; a: string }) => <details class="q"><summary>{f.q}</summary><p>{f.a}</p></details>)}
+        </div>
+      </div>
+    </section>
+
+    <section class="section other-sys">
+      <div class="container">
+        <p class="eyebrow">Другие системы</p>
+        <nav class="sys-switch" aria-label="Направления">
+          {directions.map((x) => (
+            <a class="sys-chip" href={`/napravleniya/${x.slug}/`} aria-current={x.slug === d.slug ? 'page' : undefined} style={`--hue:${dirVisual[x.slug].hue}`}>
+              <Icon name={x.icon} size={20} />{x.label}
+            </a>
+          ))}
+          <a class="sys-chip" href="/">На главную</a>
+        </nav>
+      </div>
+    </section>
+
+    <IntakeForm />
+  </div>
+</Base>

@@ -1,0 +1,81 @@
+---
+// Схематичная line-art иллюстрация системы, когда реального фото нет. Подписано как «Схема», не выдаётся за объект.
+import { ui } from '../ui.mjs';
+const { kind = 'vodosnabzhenie', class: cls = '' } = Astro.props;
+const hatch = Array.from({ length: 15 }, (_, i) => 8 + i * 20);
+---
+<div class={`plate ${cls}`} role="img" aria-label={ui.schematicAlt}>
+  <svg viewBox="0 0 300 400" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+    {kind === 'vodosnabzhenie' && (
+      <g>
+        <path class="sp-line" d="M0 130H300" />
+        {hatch.map((x) => <path class="sp-faint" d={`M${x} 130l-10 12`} />)}
+        <path class="sp-line" d="M176 112h58M182 112v196h46V112" />
+        <path class="sp-faint" d="M176 104h58" />
+        <path class="sp-pipe" d="M0 262H182M228 262H300M0 286H182M228 286H300" />
+        <path class="sp-flow" d="M0 274H300" />
+        <path class="sp-pipe" d="M70 256l24 36v-36l-24 36z" />
+        <path class="sp-line" d="M82 256v-26h-12h24" />
+        <path class="sp-pipe" d="M0 336l300 16M0 352l300 16" />
+        <path class="sp-flow sp-flow-slow" d="M0 344l300 16" />
+        <path class="sp-faint" d="M20 200h40M20 196v8M60 196v8M250 180v60M246 180h8M246 240h8" />
+        <circle class="sp-node" cx="205" cy="274" r="5" />
+      </g>
+    )}
+    {kind === 'gazosnabzhenie' && (
+      <g>
+        <path class="sp-line" d="M0 170H300" />
+        {hatch.map((x) => <path class="sp-faint" d={`M${x} 170l-10 12`} />)}
+        <path class="sp-pipe" d="M0 300H192M0 318H210M192 300V96M210 318V96" />
+        <path class="sp-flow" d="M0 309H201V96" />
+        <path class="sp-pipe" d="M185 214l32-22v22l-32-22z" />
+        <path class="sp-line" d="M201 203h26v-12" />
+        <rect class="sp-line" x="166" y="44" width="70" height="52" rx="3" />
+        <path class="sp-pipe" d="M176 70q25-22 50 0" />
+        <path class="sp-line" d="M201 59v-27M190 32h22" />
+        <path class="sp-pipe" d="M236 62H300M236 80H300" />
+        <path class="sp-flow" d="M236 71H300" />
+        <path class="sp-faint" d="M30 230h60M30 226v8M90 226v8M40 360h120" />
+        <circle class="sp-node" cx="201" cy="309" r="5" />
+      </g>
+    )}
+    {kind === 'teplosnabzhenie' && (
+      <g>
+        <path class="sp-line" d="M0 120H300" />
+        {hatch.map((x) => <path class="sp-faint" d={`M${x} 120l-10 12`} />)}
+        <path class="sp-line" d="M40 200h220v130H40zM30 190h240" />
+        <circle class="sp-faint" cx="110" cy="265" r="38" />
+        <circle class="sp-pipe" cx="110" cy="265" r="22" />
+        <circle class="sp-faint" cx="190" cy="265" r="38" />
+        <circle class="sp-pipe" cx="190" cy="265" r="22" />
+        <circle class="sp-node" cx="110" cy="265" r="5" />
+        <circle class="sp-node" cx="190" cy="265" r="5" />
+        <path class="sp-faint" d="M40 350h220M40 346v8M260 346v8" />
+      </g>
+    )}
+    {kind === 'elektrosnabzhenie' && (
+      <g>
+        <path class="sp-line" d="M0 120H300" />
+        {hatch.map((x) => <path class="sp-faint" d={`M${x} 120l-10 12`} />)}
+        <path class="sp-line" d="M70 120v220h160V120" />
+        <path class="sp-faint" d="M70 250h160M70 300h160" />
+        <path class="sp-flow" d="M80 210h140" />
+        <circle class="sp-pipe" cx="115" cy="275" r="12" />
+        <circle class="sp-pipe" cx="150" cy="275" r="12" />
+        <circle class="sp-pipe" cx="185" cy="275" r="12" />
+        <circle class="sp-node" cx="150" cy="275" r="4" />
+      </g>
+    )}
+    {kind === 'ventilyatsiya' && (
+      <g>
+        <path class="sp-pipe" d="M0 150H200V250H0M200 175h100M200 225h100" />
+        <path class="sp-flow" d="M0 200H300" />
+        <circle class="sp-line" cx="110" cy="200" r="34" />
+        <path class="sp-pipe" d="M110 200l0-30M110 200l26 15M110 200l-26 15" />
+        <path class="sp-faint" d="M240 260v60M260 260v60M280 260v60" />
+        <circle class="sp-node" cx="110" cy="200" r="5" />
+      </g>
+    )}
+  </svg>
+  <span class="plate-tag mono">{ui.schematic}</span>
+</div>

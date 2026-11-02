@@ -1,0 +1,6 @@
+---
+// Обёртка формы: отступ сверху + узел «сквозного трубопровода».
+import IntakeForm from './IntakeForm.astro';
+const props = Astro.props;
+---
+<div class="intake-wrap"><IntakeForm {...props} /></div>

@@ -1,0 +1,263 @@
+---
+// Волна 2: у каждой услуги своя композиция (порядок и вид блоков) и своя визуализация (SvcViz).
+import Base from '../../layouts/Base.astro';
+import IsoSystem from '../../components/IsoSystem.astro';
+import SvcViz from '../../components/SvcViz.astro';
+import Photo from '../../components/Photo.astro';
+import Intake from '../../components/Intake.astro';
+import { directions, services, mainServices, workServices, extraServices, serviceByPath, directionByPath, cta, photos, photosNote } from '../../content.mjs';
+import { ui } from '../../ui.mjs';
+
+export function getStaticPaths() {
+  return services.map((s) => ({ params: { slug: s.slug }, props: { s } }));
+}
+const { s } = Astro.props;
+const path = `/uslugi/${s.slug}/`;
+const grp = ui.groups[s.group] ?? ui.groups.main;
+const strip = s.group === 'main' ? mainServices : s.group === 'work' ? workServices : extraServices;
+const rel = s.related
+  .map((r) => {
+    const x = serviceByPath(r);
+    if (x) return { href: r, label: x.label, lead: x.cardLead, kind: ui.nav.services };
+    const d = directionByPath(r);
+    return d ? { href: r, label: d.label, lead: d.cardLead, kind: ui.nav.directions } : null;
+  })
+  .filter(Boolean);
+const sysVar = { vodosnabzhenie: 'water', teplosnabzhenie: 'heat', elektrosnabzhenie: 'elec', ventilyatsiya: 'vent', gazosnabzhenie: 'gas' };
+const pad = (i) => String(i + 1).padStart(2, '0');
+const showPhotos = import.meta.env.PUBLIC_PHOTOS === '1';
+const smrPhotos = showPhotos && s.slug === 'smr' ? directions.map((d) => photos.find((p) => p.dir === d.slug && !p.ai)).filter(Boolean).slice(0, 4) : [];
+
+// Композиция: вид первого экрана и порядок блоков. steps:<вид> — pipe | rail | zig | doc | quest
+const C = {
+  'tekhnicheskiy-zakazchik': { hero: 'split', blocks: ['who', 'situations', 'steps:pipe', 'extra', 'inputs', 'outputs', 'related', 'bysys', 'faq'] },
+  'proektirovanie-i-soglasovaniya': { hero: 'wide', blocks: ['situations', 'scope:sheets', 'steps:rail', 'extra', 'inputs', 'outputs', 'boundary', 'related', 'bysys', 'faq'] },
+  'soglasovanie-rso': { hero: 'split', blocks: ['situations', 'steps:doc', 'scope', 'outputs', 'boundary', 'bysys', 'related', 'faq'] },
+  smr: { hero: 'wide', blocks: ['situations', 'photos', 'scope', 'steps:pipe', 'outputs', 'boundary', 'bysys', 'related', 'faq'] },
+  'dokumentatsiya-i-sdacha': { hero: 'split', blocks: ['situations', 'steps:rail', 'inputs', 'outputs', 'boundary', 'related', 'bysys', 'faq'] },
+  'zemlyanye-raboty': { hero: 'split', blocks: ['situations', 'scope', 'steps:zig', 'outputs', 'boundary', 'bysys', 'related', 'faq'] },
+  'montazh-truboprovoda': { hero: 'stage', blocks: ['situations', 'scope', 'steps:rail', 'outputs', 'boundary', 'bysys', 'related', 'faq'] },
+  'montazh-kabelya': { hero: 'wide', blocks: ['scope', 'situations', 'steps:pipe', 'outputs', 'boundary', 'bysys', 'related', 'faq'] },
+  'proektirovanie-itp': { hero: 'split', blocks: ['situations', 'scope', 'steps:zig', 'outputs', 'boundary', 'related', 'faq'] },
+  'tekhprisoedinenie-i-tu': { hero: 'split', blocks: ['situations', 'steps:quest', 'extra', 'scope', 'outputs', 'boundary', 'related', 'faq'] },
+  'vynos-setey': { hero: 'wide', blocks: ['situations', 'steps:rail', 'extra', 'scope', 'outputs', 'boundary', 'related', 'faq'] },
+  ekspertiza: { hero: 'split', blocks: ['situations', 'extra', 'steps:zig', 'scope', 'outputs', 'boundary', 'related', 'faq'] },
+};
+const cfg = C[s.slug] ?? { hero: 'split', blocks: ['situations', 'scope', 'steps:pipe', 'outputs', 'boundary', 'related', 'faq'] };
+const blocks = cfg.blocks.map((b) => { const [t, v] = b.split(':'); return { t, v }; });
+const hasScopeBlock = blocks.some((b) => b.t === 'scope' || b.t === 'who');
+---
+<Base
+  title={s.title}
+  description={s.description}
+  path={path}
+  crumbs={[{ name: ui.home, href: '/' }, { name: grp.label, href: grp.href }, { name: s.label, href: path }]}
+>
+  <section class:list={['page-hero', 'svc-hero', `svc-hero-${cfg.hero}`, `svc-${s.slug}`]}>
+    <div class="container">
+      <div class="svc-hero-grid">
+        <div class="svc-copy">
+          <p class="crumbs"><a href="/">{ui.home}</a> <span aria-hidden="true">/</span> <a href={grp.href}>{grp.label}</a> <span aria-hidden="true">/</span> {s.label}</p>
+          <p class="mono-label">{grp.label}</p>
+          <h1>{s.h1}</h1>
+          <p class="lead">{s.lead}</p>
+          <div class="cta-row">
+            <a class="btn btn-primary" href={`?service=${s.id}#intake`}>{cta.primary}<span aria-hidden="true">→</span></a>
+          </div>
+        </div>
+        <div class="svc-art"><SvcViz s={s} /></div>
+      </div>
+      <nav class="stage-strip" aria-label={grp.label} style={`--n:${strip.length}`}>
+        {strip.map((m, i) => (
+          <a href={`/uslugi/${m.slug}/`} aria-current={m.id === s.id ? 'page' : undefined}>
+            <span class="mono">{pad(i)}</span>{m.label}
+          </a>
+        ))}
+      </nav>
+    </div>
+  </section>
+
+  {blocks.map(({ t, v }) => {
+    if (t === 'who') return (
+      <section class="section">
+        <div class="container">
+          <div class="section-head rv"><h2>{ui.page.whoWhat}</h2></div>
+          <div class="table-wrap rv">
+            <table class="who">
+              <thead><tr><th scope="col">{ui.page.whoCols[0]}</th><th scope="col">{ui.page.whoCols[1]}</th></tr></thead>
+              <tbody>
+                {s.scopeGroups.map((g, i) => (
+                  <tr><th scope="row"><span class="mono">{pad(i)}</span>{g.title}</th><td><ul class="tick-list">{g.items.map((x) => <li>{x}</li>)}</ul></td></tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <p class="boundary"><strong>{ui.page.boundary}</strong> {s.boundary}</p>
+          <div class="two mt">
+            <div class="rv"><h3>{ui.page.inputs}</h3><ul class="tick-list">{s.inputs.map((x) => <li>{x}</li>)}</ul><p class="muted small">{ui.page.noDocs}</p></div>
+            <div class="rv"><h3>{ui.page.check}</h3><ul class="tick-list">{s.check.map((x) => <li>{x}</li>)}</ul></div>
+          </div>
+        </div>
+      </section>
+    );
+    if (t === 'situations') return (
+      <section class="section sit">
+        <div class="container sit-grid">
+          <div class="sit-head rv"><p class="mono-label">{s.label}</p><h2>{ui.page.situations}</h2></div>
+          <ol class="sit-list">{s.situations.map((x, i) => <li class="rv" style={`--i:${i % 3}`}><span class="mono">{pad(i)}</span><p>{x}</p></li>)}</ol>
+        </div>
+      </section>
+    );
+    if (t === 'scope') return (
+      <section class="section">
+        {v === 'sheets' ? (
+          <div class="container">
+            <div class="section-head rv"><h2>{ui.page.scopeService}</h2></div>
+            <div class="tc-sheet sheets-4">
+              {s.scopeGroups.map((g, gi) => (
+                <div class="tc-col rv" style={`--i:${gi}`}>
+                  <h3><span class="mono">{gi + 1}</span>{g.title}</h3>
+                  <ul>{g.items.map((x, ii) => <li><span class="mono">{gi + 1}.{ii + 1}</span>{x}</li>)}</ul>
+                </div>
+              ))}
+            </div>
+            <div class="two mt">
+              <div class="rv"><h3>{ui.page.inputs}</h3><ul class="tick-list">{s.inputs.map((x) => <li>{x}</li>)}</ul><p class="muted small">{ui.page.noDocs}</p></div>
+              <div class="rv"><h3>{ui.page.check}</h3><ul class="tick-list">{s.check.map((x) => <li>{x}</li>)}</ul></div>
+            </div>
+          </div>
+        ) : (
+          <div class="container two">
+            <div class="rv">
+              <h2>{ui.page.scopeService}</h2>
+              {s.scopeGroups.map((g) => (
+                <div class="group"><h3 class="mono-label">{g.title}</h3><ul class="tick-list">{g.items.map((x) => <li>{x}</li>)}</ul></div>
+              ))}
+            </div>
+            <div class="rv">
+              <h2>{ui.page.inputs}</h2>
+              <ul class="tick-list">{s.inputs.map((x) => <li>{x}</li>)}</ul>
+              <p class="muted">{ui.page.noDocs}</p>
+              <h2 class="mt">{ui.page.check}</h2>
+              <ul class="tick-list">{s.check.map((x) => <li>{x}</li>)}</ul>
+            </div>
+          </div>
+        )}
+      </section>
+    );
+    if (t === 'inputs' && hasScopeBlock) return null;
+    if (t === 'inputs') return (
+      <section class="section">
+        <div class="container two">
+          <div class="rv"><h2>{ui.page.inputs}</h2><ul class="tick-list">{s.inputs.map((x) => <li>{x}</li>)}</ul><p class="muted">{ui.page.noDocs}</p></div>
+          <div class="rv"><h2>{ui.page.check}</h2><ul class="tick-list">{s.check.map((x) => <li>{x}</li>)}</ul></div>
+        </div>
+      </section>
+    );
+    if (t === 'extra') return (s.extra ?? []).map((x) => (
+      <section class="section">
+        <div class="container">
+          <div class="note-box extra-box rv">
+            <h2>{x.title}</h2>
+            <ul class="extra-list">{x.items.map((i) => { const [a, ...b] = i.split(/\s—\s/); return <li>{b.length ? <><strong>{a}</strong><span>{b.join(' — ')}</span></> : <span>{i}</span>}</li>; })}</ul>
+            {x.note && <p class="muted small">{x.note}</p>}
+          </div>
+        </div>
+      </section>
+    ));
+    if (t === 'photos') return smrPhotos.length > 0 && (
+      <section class="section">
+        <div class="container">
+          <div class="section-head rv"><h2>{ui.page.photos}</h2></div>
+          <div class="gallery g4">{smrPhotos.map((x) => <Photo ph={x} sizes="(max-width: 700px) 45vw, 300px" cls="rv" />)}</div>
+          <p class="small muted note" data-placeholder>{photosNote}</p>
+        </div>
+      </section>
+    );
+    if (t === 'steps') {
+      if (v === 'pipe') return (
+        <section class="section"><div class="container">
+          <div class="section-head rv"><h2>{ui.page.steps}</h2></div>
+          <ol class="pipe-route rv">{s.steps.map((r, i) => <li><span class="mono">{pad(i)}</span><strong>{r.t}</strong><small>{r.d}</small></li>)}</ol>
+        </div></section>
+      );
+      if (v === 'rail' || v === 'doc') return (
+        <section class="section"><div class="container">
+          <div class="section-head rv"><h2>{ui.page.steps}</h2></div>
+          <div class:list={['rail', { 'rail-doc': v === 'doc' }]} data-scene data-mode="view" data-steps="1">
+            <span class="rail-line" aria-hidden="true"><span class="rail-fill L" data-k="0" data-d="1"></span>{v === 'doc' && <span class="rail-doc-i L" data-k="0" data-d="1"></span>}</span>
+            <ol>
+              {s.steps.map((r, i) => (
+                <li class="rv"><span class="rail-n mono">{pad(i)}</span><h3>{r.t}</h3><p class="muted">{r.d}</p></li>
+              ))}
+            </ol>
+          </div>
+        </div></section>
+      );
+      if (v === 'zig') return (
+        <section class="section"><div class="container">
+          <div class="section-head rv"><h2>{ui.page.steps}</h2></div>
+          <ol class="zig">{s.steps.map((r, i) => <li class="rv"><span class="zig-n mono">{pad(i)}</span><div><h3>{r.t}</h3><p class="muted">{r.d}</p></div></li>)}</ol>
+        </div></section>
+      );
+      if (v === 'quest') return (
+        <section class="section"><div class="container">
+          <div class="section-head rv"><h2>{ui.page.quest}</h2></div>
+          <ol class="quest">{s.steps.map((r, i) => <li class="rv" style={`--i:${i}`}><span class="q-n mono">{pad(i)}</span><h3>{r.t}</h3><p class="muted">{r.d}</p></li>)}</ol>
+        </div></section>
+      );
+    }
+    if (t === 'outputs') return (
+      <section class="section">
+        <div class="container outs-grid">
+          <div class="rv"><h2>{ui.page.outputs}</h2><ol class="outs">{s.outputs.map((x, i) => <li><span class="mono">{pad(i)}</span>{x}</li>)}</ol></div>
+          <div class="rv factors"><h2>{ui.page.factors}</h2><ul class="tick-list">{s.factors.map((x) => <li>{x}</li>)}</ul></div>
+        </div>
+      </section>
+    );
+    if (t === 'boundary') return (
+      <section class="section"><div class="container"><p class="boundary"><strong>{ui.page.boundary}</strong> {s.boundary}</p></div></section>
+    );
+    if (t === 'bysys') return (
+      <section class="section">
+        <div class="container">
+          <div class="section-head rv"><h2>{ui.page.bySystem}</h2><p class="muted">{ui.page.bySystemText}</p></div>
+          <ul class="sys-tiles">
+            {directions.map((d) => (
+              <li style={`--c:var(--sys-${sysVar[d.slug]})`}>
+                <a href={`/napravleniya/${d.slug}/?service=${s.id}`}><IsoSystem slug={d.slug} /><strong>{d.label}</strong></a>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </section>
+    );
+    if (t === 'related') return rel.length > 0 && (
+      <section class="section">
+        <div class="container">
+          <div class="section-head rv"><h2>{ui.page.related}</h2></div>
+          <div class="spec spec-wide">
+            {rel.map((o, i) => (
+              <a class="spec-row" href={o.href}>
+                <span class="mono spec-n">{pad(i)}</span>
+                <span class="spec-body"><strong>{o.label}</strong><small>{o.lead}</small></span>
+                <span class="spec-arr" aria-hidden="true">→</span>
+              </a>
+            ))}
+          </div>
+        </div>
+      </section>
+    );
+    if (t === 'faq') return (
+      <section class="section">
+        <div class="container narrow">
+          <div class="section-head rv"><h2>{ui.page.faqService}</h2></div>
+          {s.faq.map((f) => <details class="q"><summary>{f.q}</summary><p>{f.a}</p></details>)}
+        </div>
+      </section>
+    );
+    return null;
+  })}
+
+  <Intake />
+</Base>

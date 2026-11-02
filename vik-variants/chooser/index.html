@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow, noarchive">
+<title>ВиК — варианты сайта</title>
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  body { margin: 0; min-height: 100vh; background: #0b0b0e; color: #ece7dc; font: 400 17px/1.55 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif; padding: 48px 20px; }
+  main { max-width: 1080px; margin: 0 auto; }
+  h1 { font-size: clamp(1.8rem, 4vw, 2.6rem); margin: 0 0 8px; letter-spacing: -0.01em; }
+  p.lead { color: #a9a395; margin: 0 0 36px; max-width: 640px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 18px; }
+  a.card { display: flex; flex-direction: column; gap: 10px; padding: 26px; border-radius: 16px; text-decoration: none; color: inherit; border: 1px solid rgba(255,255,255,0.12); transition: transform .15s, border-color .15s; min-height: 220px; }
+  a.card:hover { transform: translateY(-2px); border-color: rgba(255,255,255,0.35); }
+  .n { font: 600 0.8rem ui-monospace, Menlo, monospace; letter-spacing: 0.18em; opacity: .7; }
+  h2 { margin: 0; font-size: 1.45rem; }
+  .d { color: #b8b2a4; font-size: 0.96rem; margin: 0; flex: 1; }
+  .go { font-weight: 600; }
+  .gold { background: radial-gradient(120% 120% at 100% 0%, rgba(216,166,58,.28), transparent 60%), #120f0b; }
+  .gold .go, .gold .n { color: #e9c46a; }
+  .kp { background: radial-gradient(120% 120% at 100% 0%, rgba(43,212,164,.22), transparent 60%), #0d1213; }
+  .kp .go, .kp .n { color: #3ad2a3; }
+  .indigo { background: radial-gradient(120% 120% at 100% 0%, rgba(74,147,255,.28), transparent 60%), #0a0f24; }
+  .indigo .go, .indigo .n { color: #7fb6ff; }
+  footer { margin-top: 36px; color: #7d786d; font-size: 0.85rem; }
+</style>
+</head>
+<body>
+<main>
+  <h1>ВиК: три варианта сайта</h1>
+  <p class="lead">Тексты и страницы одинаковые, отличаются оформление и анимация. Откройте каждый вариант на компьютере и телефоне и выберите, какой нравится больше.</p>
+  <div class="grid">
+    <a class="card gold" href="https://gold.vikmsk.ru/">
+      <span class="n">ВАРИАНТ 1</span>
+      <h2>Золото</h2>
+      <p class="d">Чёрный мрамор и золото, ваша эмблема с системами. Золотой трубопровод собирается при прокрутке.</p>
+      <span class="go">Открыть →</span>
+    </a>
+    <a class="card kp" href="https://kp.vikmsk.ru/">
+      <span class="n">ВАРИАНТ 2</span>
+      <h2>Прогрессив</h2>
+      <p class="d">Графит и изумруд, реальные трубопроводы, лента этапов как в концепции №6.</p>
+      <span class="go">Открыть →</span>
+    </a>
+    <a class="card indigo" href="https://indigo.vikmsk.ru/">
+      <span class="n">ВАРИАНТ 3</span>
+      <h2>Индиго</h2>
+      <p class="d">Синий треугольник и инженерный разрез: здание и сети под ним собираются слоями.</p>
+      <span class="go">Открыть →</span>
+    </a>
+  </div>
+  <footer>Закрытый стенд, сайт не индексируется. Формы работают в тестовом режиме.</footer>
+</main>
+</body>
+</html>

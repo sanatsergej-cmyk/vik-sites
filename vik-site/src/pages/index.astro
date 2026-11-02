@@ -1,0 +1,378 @@
+---
+import Base from '../layouts/Base.astro';
+import Icon from '../components/Icon.astro';
+import Pic from '../components/Pic.astro';
+import IntakeForm from '../components/IntakeForm.astro';
+import PipelineScene from '../components/PipelineScene.astro';
+import SystemArt from '../components/SystemArt.astro';
+import ClientsBlock from '../components/ClientsBlock.astro';
+import Gallery from '../components/Gallery.astro';
+import {
+  home, brand, principles, directions, services, mainServices, workServices, extraServices, stages, route, riskPoints,
+  manufacturers, energy, mission, companyBlock, cta,
+} from '../content/index.mjs';
+import { photos, photosNote } from '../content/photos.mjs';
+import { dirVisual, photosOn, artLabel } from '../data/visual';
+
+const tc = services.find((s) => s.id === 'technical-customer');
+const photoById = Object.fromEntries(photos.map((p) => [p.id, p]));
+const stageIcons: Record<string, string> = { tu: 'doc', project: 'blueprint', remarks: 'remarks', handover: 'docs' };
+const audIcons = ['building', 'clipboard', 'helmet', 'factory'];
+const pad = (i: number) => String(i + 1).padStart(2, '0');
+const smrCards = directions.map((d) => {
+  const v = dirVisual[d.slug];
+  const ph = v.photo && photosOn ? photoById[v.photo] : null;
+  const items = d.scopeGroups.flatMap((g) => g.items).slice(0, 4);
+  return { d, v, ph, items };
+});
+const dust = Array.from({ length: 14 }, (_, i) => ({
+  x: (i * 37 + 11) % 100,
+  d: 9 + ((i * 7) % 9),
+  delay: -((i * 1.7) % 12),
+  s: 1 + (i % 3),
+}));
+---
+<Base title={home.title} description={home.description} path="/">
+  <section class="hero" data-parallax>
+    <div class="hero-layer hero-marble" data-depth="0.32" aria-hidden="true"></div>
+    <video class="hero-layer hero-video" data-depth="0.24" data-hero-video data-src="/video/hero-gold.mp4" poster="/video/hero-gold.jpg" muted loop playsinline preload="none" aria-hidden="true"></video>
+    <svg class="hero-layer hero-lines" data-depth="0.16" viewBox="0 0 1440 900" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+      <defs>
+        <linearGradient id="hl-v" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#f7dd94" stop-opacity="0" />
+          <stop offset=".45" stop-color="#f7dd94" stop-opacity=".9" />
+          <stop offset="1" stop-color="#d8a63a" stop-opacity="0" />
+        </linearGradient>
+        <linearGradient id="hl-d" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#f7dd94" />
+          <stop offset="1" stop-color="#8e6620" stop-opacity=".2" />
+        </linearGradient>
+      </defs>
+      <g class="hl-desk">
+        <path class="hl" pathLength="1" d="M690 610 1040 104 1390 610" stroke="url(#hl-d)" stroke-width="2" />
+        <path class="hl hl-2" pathLength="1" d="M750 610 1040 184 1330 610" stroke="url(#hl-d)" stroke-width="1" />
+        <path class="hl hl-3" pathLength="1" d="M36 0V900M1404 0V900" stroke="url(#hl-v)" stroke-width="1.5" />
+      </g>
+      <g class="hl-mob">
+        <path class="hl" pathLength="1" d="M470 400 720 70 970 400" stroke="url(#hl-d)" stroke-width="2.4" />
+        <path class="hl hl-2" pathLength="1" d="M520 400 720 130 920 400" stroke="url(#hl-d)" stroke-width="1.2" />
+        <path class="hl hl-3" pathLength="1" d="M556 0V900M884 0V900" stroke="url(#hl-v)" stroke-width="1.4" />
+      </g>
+    </svg>
+    <div class="hero-layer hero-glow" data-depth="0.08" aria-hidden="true"></div>
+    <div class="hero-dust" aria-hidden="true">
+      {dust.map((p) => <span style={`--x:${p.x}%;--d:${p.d}s;--delay:${p.delay}s;--s:${p.s}px`}></span>)}
+    </div>
+
+    <div class="container hero-grid">
+      <div class="hero-emblem" data-depth="-0.06">
+        <div class="emblem-tilt" data-tilt>
+          <div class="emblem-float">
+            <Pic class="emblem" base="/brand/emblem-cut" ext="png" alt="Эмблема ВиК: треугольник с символами воды, тепла, электричества и энергосбережения" width={825} height={575} loading="eager" fetchpriority="high" />
+          </div>
+        </div>
+      </div>
+      <div class="hero-copy">
+        <div class="wordmark" aria-hidden="true">{brand.name}</div>
+        <p class="tag">{brand.tagline}</p>
+        <ul class="principles">{principles.map((x) => <li>{x}</li>)}</ul>
+        <h1 class="hero-h1">{home.h1}</h1>
+        <p class="lead">{home.lead}</p>
+        <div class="cta">
+          <a class="btn btn-gold" href="#intake"><span>{cta.primary}</span><span class="btn-ico"><Icon name="arrow" size={16} /></span></a>
+          <a class="btn btn-ghost" href="#intake">{cta.secondary}</a>
+        </div>
+        <p class="eta"><Icon name="clock" size={17} /> Первичная оценка: {brand.eta}</p>
+      </div>
+    </div>
+    <a class="scroll-cue" href="#napravleniya" aria-label="К направлениям"><span></span></a>
+  </section>
+
+  <PipelineScene>
+    <section class="section systems" id="napravleniya">
+      <div class="container">
+        <div class="section-head split" data-reveal>
+          <div><p class="eyebrow">Пять систем</p><h2>{home.directions.title}</h2></div>
+          <p>{home.directions.text}</p>
+        </div>
+        <ul class="sys-grid">
+          {directions.map((d, i) => (
+            <li data-reveal style={`--i:${i};--hue:${dirVisual[d.slug].hue}`}>
+              <a class="sys" href={`/napravleniya/${d.slug}/`}>
+                <span class="sys-ring"><Icon name={d.icon} size={34} /></span>
+                <span class="sys-name">{d.label}</span>
+                <span class="sys-lead">{d.cardLead}</span>
+                <span class="sys-go"><Icon name="arrow-up-right" size={16} /></span>
+              </a>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </section>
+
+    <section class="section stages-sec" data-node="0">
+      <div class="container">
+        <div class="section-head split" data-reveal>
+          <div>
+            <p class="stage-tag" data-node-mark><span>Этап {route[0].n}</span>{route[0].t}</p>
+            <h2>{home.stage.title}</h2>
+          </div>
+          <p>{home.stage.text}</p>
+        </div>
+        <div class="stage-keys">
+          {stages.map((s, i) => (
+            <a class="stage-key" href={`/?stage=${s.id}#intake`} data-reveal style={`--i:${i}`}>
+              <span class="sk-top"><span class="sk-ico"><Icon name={stageIcons[s.id] ?? 'doc'} size={24} /></span><span class="sk-n">{pad(i)}</span></span>
+              <span class="sk-label">{s.label}</span>
+              <span class="sk-go"><Icon name="arrow" size={16} /></span>
+            </a>
+          ))}
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="uslugi" data-node="1">
+      <div class="container">
+        <div class="section-head split" data-reveal>
+          <div>
+            <p class="stage-tag" data-node-mark><span>Этап {route[1].n}</span>{route[1].t}</p>
+            <h2>{home.services.title}</h2>
+          </div>
+          <p>{home.services.text}</p>
+        </div>
+        <ol class="index-list">
+          {mainServices.map((s, i) => (
+            <li data-reveal style={`--i:${i}`}>
+              <a class="index-row" href={`/uslugi/${s.slug}/`}>
+                <span class="ix-n">{pad(i)}</span>
+                <span class="ix-ico"><Icon name={s.icon} size={26} /></span>
+                <span class="ix-title">{s.label}</span>
+                <span class="ix-lead">{s.cardLead}</span>
+                <span class="ix-go"><Icon name="arrow" size={18} /></span>
+              </a>
+            </li>
+          ))}
+        </ol>
+        {extraServices.length > 0 && (
+          <div class="extra-svc" id="uslugi-dop">
+            <p class="eyebrow">Дополнительные услуги</p>
+            <div class="extra-row">
+              {extraServices.map((s, i) => (
+                <a class="extra-card" href={`/uslugi/${s.slug}/`} data-reveal style={`--i:${i}`}>
+                  <span class="ix-ico"><Icon name={s.icon} size={24} /></span>
+                  <span class="ec-t">{s.label}</span>
+                  <span class="ec-l">{s.cardLead}</span>
+                  <span class="ix-go"><Icon name="arrow" size={16} /></span>
+                </a>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    </section>
+
+    {tc && (
+      <section class="section tc-sec" id="tekhzakazchik">
+        <div class="container tc">
+          <div class="tc-aside" data-reveal>
+            <p class="eyebrow">Раскрытие услуги</p>
+            <h2>{home.techCustomer.title}</h2>
+            <p>{home.techCustomer.text}</p>
+            <p class="muted">{tc.cardLead}</p>
+            <a class="btn btn-ghost" href={`/uslugi/${tc.slug}/`}><span>{home.techCustomer.more}</span><span class="btn-ico"><Icon name="arrow" size={16} /></span></a>
+          </div>
+          <div class="tc-acc">
+            {tc.scopeGroups.map((g, i) => (
+              <details class="acc" open={i === 0} data-reveal style={`--i:${i}`}>
+                <summary>
+                  <span class="acc-n">{pad(i)}</span>
+                  <span class="acc-t">{g.title}</span>
+                  <span class="acc-c">{g.items.length}</span>
+                  <span class="acc-plus" aria-hidden="true"></span>
+                </summary>
+                <ul class="ticks">{g.items.map((x) => <li><Icon name="check" size={16} />{x}</li>)}</ul>
+              </details>
+            ))}
+          </div>
+        </div>
+      </section>
+    )}
+
+    <section class="section" id="raboty">
+      <div class="container">
+        <div class="section-head split" data-reveal>
+          <div><p class="eyebrow">Основные работы</p><h2>{home.works.title}</h2></div>
+          <p>{home.works.text}</p>
+        </div>
+        <div class="works">
+          {workServices.map((s, i) => (
+            <a class="bezel work" href={`/uslugi/${s.slug}/`} data-reveal style={`--i:${i}`}>
+              <span class="bezel-core">
+                <span class="work-top"><span class="work-n" aria-hidden="true">{pad(i)}</span><span class="work-rule" aria-hidden="true"></span><span class="work-ico"><Icon name={s.icon} size={26} /></span></span>
+                <span class="work-title">{s.label}</span>
+                <span class="work-lead">{s.cardLead}</span>
+                <span class="link-go">Подробнее <span class="btn-ico"><Icon name="arrow" size={14} /></span></span>
+              </span>
+            </a>
+          ))}
+        </div>
+      </div>
+    </section>
+
+    <section class="section route-sec" data-parallax data-parallax-center>
+      <div class="container route-grid">
+        <div class="route-visual" data-reveal>
+          <div class="bezel">
+            <div class="bezel-core route-frame">
+              <div class="route-img" data-depth="-0.07">
+                <Pic base="/art/building-section" alt="Иллюстрация: здание и инженерные сети под ним в разрезе" width={501} height={550} sizes="(max-width: 900px) 92vw, 40vw" />
+              </div>
+              <span class="media-label">{artLabel}</span>
+            </div>
+          </div>
+        </div>
+        <div class="route-copy">
+          <div class="section-head" data-reveal>
+            <p class="eyebrow">Маршрут</p>
+            <h2>{home.route.title}</h2>
+            <p>{home.route.text}</p>
+          </div>
+          <ol class="route-strip">
+            {route.map((r) => (
+              <li data-step>
+                <span class="rs-node"><span>{r.n}</span></span>
+                <div class="rs-body"><strong>{r.t}</strong><p>{r.d}</p></div>
+              </li>
+            ))}
+          </ol>
+        </div>
+      </div>
+    </section>
+
+    <section class="section risk-sec" data-node="2">
+      <div class="container risk-grid">
+        <div class="risk-head" data-reveal>
+          <p class="stage-tag" data-node-mark><span>Этап {route[2].n}</span>{route[2].t}</p>
+          <h2>{home.risk.title}</h2>
+          <p>{home.risk.text}</p>
+        </div>
+        <ol class="risk-list">
+          {riskPoints.map((r, i) => (
+            <li data-reveal style={`--i:${i}`}>
+              <span class="risk-n">{pad(i)}</span>
+              <div><h3>{r.t}</h3><p>{r.d}</p></div>
+            </li>
+          ))}
+        </ol>
+      </div>
+    </section>
+
+    <section class="section smr-sec" id="smr" data-node="3">
+      <div class="container">
+        <div class="section-head split" data-reveal>
+          <div>
+            <p class="stage-tag" data-node-mark><span>Этап {route[3].n}</span>{route[3].t}</p>
+            <h2>{home.smr.title}</h2>
+          </div>
+          <p>{home.smr.text}</p>
+        </div>
+      </div>
+      <div class="smr-scroller">
+        <div class="smr-grid">
+          {smrCards.map(({ d, v, ph, items }, i) => (
+            <article class="smr-card" style={`--hue:${v.hue};--i:${i}`} data-reveal>
+              <a class="smr-link" href={`/napravleniya/${d.slug}/`}>
+                <div class="smr-media">
+                  {ph ? (
+                    <Pic base={ph.src.replace(/\.jpg$/, '')} alt={ph.alt} width={750} height={1000} small sizes="(max-width: 760px) 82vw, 40vw" />
+                  ) : v.art ? (
+                    <Pic base={v.art} alt={v.artAlt} width={v.artW} height={v.artH} sizes="(max-width: 760px) 82vw, 40vw" />
+                  ) : (
+                    <SystemArt slug={d.slug} />
+                  )}
+                  <span class="smr-badge"><Icon name={d.icon} size={24} /></span>
+                  {(ph || v.art) && <span class="media-label">{ph ? ph.cap : artLabel}</span>}
+                </div>
+                <div class="smr-body">
+                  <h3>{d.label}</h3>
+                  <p>{d.cardLead}</p>
+                  <ul class="ticks">{items.map((x) => <li><Icon name="check" size={15} />{x}</li>)}</ul>
+                  <span class="link-go">Страница системы <span class="btn-ico"><Icon name="arrow" size={14} /></span></span>
+                </div>
+              </a>
+            </article>
+          ))}
+        </div>
+      </div>
+      {photosOn && <div class="container"><p class="note" data-placeholder>{photosNote}</p></div>}
+    </section>
+
+    <section class="section">
+      <div class="container">
+        <div class="section-head" data-reveal><p class="eyebrow">Заказчики</p><h2>{home.audiences.title}</h2></div>
+        <div class="aud-grid">
+          {home.audiences.items.map((a, i) => (
+            <div class="bezel aud" data-reveal style={`--i:${i}`}>
+              <div class="bezel-core">
+                <span class="aud-ico"><Icon name={audIcons[i] ?? 'building'} size={28} /></span>
+                <h3>{a.t}</h3>
+                <p>{a.d}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+
+    <Gallery />
+    <ClientsBlock />
+
+    <section class="section energy-sec">
+      <div class="container energy-grid">
+        <div class="energy-main" data-reveal>
+          <p class="eyebrow"><Icon name="leaf" size={16} /> Принцип</p>
+          <h2>{energy.title}</h2>
+          <p class="energy-text">{energy.text}</p>
+        </div>
+        <div class="bezel energy-side" data-reveal style="--i:1">
+          <div class="bezel-core">
+            <span class="aud-ico"><Icon name="layers" size={28} /></span>
+            <h3>{manufacturers.title}</h3>
+            <p>{manufacturers.text}</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="mission" data-parallax data-parallax-center>
+      <div class="mission-marble" data-depth="0.12" aria-hidden="true"></div>
+      <div class="container mission-inner" data-reveal>
+        <p class="eyebrow">{mission.title}</p>
+        <p class="mission-text">{mission.text}</p>
+        <p class="mission-note">{home.missionNote}</p>
+      </div>
+    </section>
+
+    <section class="section company-sec">
+      <div class="container">
+        <div class="statusbox" data-reveal>
+          <span class="aud-ico"><Icon name="shield" size={26} /></span>
+          <div><h3>{companyBlock.title}</h3><p>{companyBlock.text}</p></div>
+          <a class="btn btn-ghost btn-sm" href="/dokumenty/">Документы и реквизиты</a>
+        </div>
+      </div>
+    </section>
+
+    <IntakeForm node={4} />
+  </PipelineScene>
+<script is:inline>
+  (function () {
+    var v = document.querySelector('[data-hero-video]'); if (!v) return;
+    var rm = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    var sd = navigator.connection && navigator.connection.saveData;
+    if (rm || sd) { v.remove(); return; }
+    v.src = v.dataset.src; v.addEventListener('playing', function () { v.classList.add('on'); });
+    var p = v.play(); if (p && p.catch) p.catch(function () {});
+  })();
+</script>
+</Base>

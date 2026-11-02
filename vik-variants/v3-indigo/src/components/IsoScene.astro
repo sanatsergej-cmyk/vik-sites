@@ -1,0 +1,259 @@
+---
+// Главная фишка V3: изометрический разрез площадки. При прокрутке слои собираются по очереди:
+// грунт -> сети по системам (подписи из directions) -> здание и вентиляция -> этапы маршрута (route).
+// Текст шагов идёт обычным потоком слева (виден без JS и поисковику), сцена справа «прилипает».
+import { makeIso } from '../lib/iso.mjs';
+import IsoPipe from './IsoPipe.astro';
+import Callout from './Callout.astro';
+import { directions, home, route } from '../content.mjs';
+import { ui } from '../ui.mjs';
+
+const D = Object.fromEntries(directions.map((d) => [d.slug, d]));
+const I = makeIso(46);
+const { p, pts, path, box, section, cyl, rectY, rectX } = I;
+
+// Площадка (грунт): x 0..12, y 0..8, глубина до -4.5
+const ZB = -4.5;
+const G = box(0, 0, ZB, 12, 8, -ZB);
+const grid = [
+  ...Array.from({ length: 11 }, (_, i) => path([[i + 1, 0, 0], [i + 1, 8, 0]])),
+  ...Array.from({ length: 7 }, (_, j) => path([[0, j + 1, 0], [12, j + 1, 0]])),
+].join(' ');
+const strata = [-1.3, -2.6, -3.7].map((z) => path([[0, 8, z], [12, 8, z]]) + ' ' + path([[12, 0, z], [12, 8, z]])).join(' ');
+const hatch = Array.from({ length: 14 }, (_, i) => {
+  const x = i * 0.9 + 0.3;
+  return path([[x, 8, ZB], [Math.min(x + 0.7, 12), 8, ZB + 0.55]]);
+}).join(' ');
+
+// Нижний контур площадки на экране: для подписей, идущих вдоль чертежа
+const cS = Math.cos(Math.PI / 6) * 46;
+const edgeY = (X) => (X <= 159.4 ? 0.5774 * X + 575 : 759 - 0.5774 * X);
+
+// Сети (y — положение в плане, z — глубина)
+// В изометрии трубы вдоль x с одинаковым (y − z) совпадают на экране, поэтому (y − z) разнесены: 5.85 / 7.4–7.6 / 8.2 / 9.0 / 10.5+
+const W = { y: 7.0, z: -2.0 };      // водопровод
+const SW = { y: 7.5, z0: -3.0, z1: -3.5 }; // канализация (уклон)
+const H = { y1: 5.68, y2: 5.92, z: -1.7 }; // теплосеть, две трубы в канале
+const E = { y: 5.25, z: -0.6 };      // кабель
+const GZ = { y: 6.6, z: -1.6 };      // газ
+const sewZ = (x) => SW.z0 + ((SW.z1 - SW.z0) * x) / 12;
+
+const anchor = (x, y, z, X) => { const [ax, ay] = p(x, y, z); return { ax, ay, lx: X ?? ax, ly: edgeY(X ?? ax) + 40 }; };
+const xFor = (X, y) => X / cS + y;
+
+const nets = {
+  water: {
+    main: path([[0, W.y, W.z], [12, W.y, W.z]]),
+    branch: path([[5, W.y, W.z], [5, 4.6, W.z], [5, 4.6, 0]]),
+    well: cyl(9, W.y, W.z - 0.4, 0, 0.42),
+    sec: section('x', 12, W.y, W.z, 0.16),
+    co: anchor(xFor(10, W.y), W.y, W.z, 10),
+  },
+  sewer: {
+    main: path([[0, SW.y, SW.z0], [12, SW.y, SW.z1]]),
+    branch: path([[3.4, 4.6, 0], [3.4, 4.6, -2.4], [3.4, SW.y, sewZ(3.4)]]),
+    sec: section('x', 12, SW.y, SW.z1, 0.2),
+    co: (() => { const [ax, ay] = p(12, SW.y, SW.z1); return { ax, ay, lx: 292, ly: 640 }; })(),
+  },
+  heat: {
+    ch: box(0, 5.5, -2.0, 12, 0.6, 0.62),
+    m1: path([[0, H.y1, H.z], [12, H.y1, H.z]]),
+    m2: path([[0, H.y2, H.z], [12, H.y2, H.z]]),
+    b1: path([[4.1, H.y1, H.z], [4.1, 4.6, H.z], [4.1, 4.6, 0]]),
+    b2: path([[4.35, H.y2, H.z], [4.35, 4.75, H.z], [4.35, 4.75, 0]]),
+    sec1: section('x', 12, H.y1, H.z, 0.11),
+    sec2: section('x', 12, H.y2, H.z, 0.11),
+    co: anchor(xFor(110, H.y2), H.y2, H.z, 110),
+  },
+  elec: {
+    main: path([[0, E.y, E.z], [12, E.y, E.z]]),
+    tape: path([[0, E.y + 0.12, E.z + 0.3], [12, E.y + 0.12, E.z + 0.3]]),
+    branch: path([[7.4, E.y, E.z], [7.4, 4.6, E.z], [7.4, 4.6, 0]]),
+    sec: section('x', 12, E.y, E.z, 0.08),
+    co: anchor(xFor(-190, E.y), E.y, E.z, -190),
+  },
+  gas: {
+    main: path([[0, GZ.y, GZ.z], [12, GZ.y, GZ.z]]),
+    branch: path([[6.4, GZ.y, GZ.z], [6.4, 5.45, GZ.z], [6.4, 5.45, 0.95], [6.4, 5.0, 0.95]]),
+    valve: p(6.4, 5.45, 0.45),
+    sec: section('x', 12, GZ.y, GZ.z, 0.1),
+    co: anchor(xFor(-90, GZ.y), GZ.y, GZ.z, -90),
+  },
+};
+
+// Здание: 3 этажа
+const B = box(3, 1, 0, 5.5, 4, 6.3);
+const floors = [2.1, 4.2].map((z) => path([[3, 5, z], [8.5, 5, z], [8.5, 1, z]])).join(' ');
+const winL = [];
+const winR = [];
+for (let f = 0; f < 3; f++) {
+  for (let x = 3.4; x <= 7.7; x += 0.9) winL.push(rectY(5, x, f * 2.1 + 0.7, 0.5, 0.9));
+  for (let y = 1.4; y <= 4.2; y += 0.9) winR.push(rectX(8.5, y, f * 2.1 + 0.7, 0.5, 0.9));
+}
+const risers = [
+  { x: 5, c: 'var(--sys-water)' },
+  { x: 3.4, c: 'var(--sys-sewer)' },
+  { x: 4.1, c: 'var(--sys-heat)' },
+  { x: 7.4, c: 'var(--sys-elec)' },
+].map((r) => ({ ...r, d: path([[r.x, 4.6, 0], [r.x, 4.6, 5.9]]) }));
+const ahu = box(5.0, 1.8, 6.3, 1.8, 1.2, 0.8);
+const duct1 = path([[3.5, 2.4, 6.62], [5.0, 2.4, 6.62]]);
+const duct2 = path([[6.8, 2.4, 6.62], [8.1, 2.4, 6.62], [8.1, 4.0, 6.62]]);
+const shaft = path([[3.6, 2.4, 6.3], [3.6, 2.4, 0.6]]);
+const ventCo = (() => { const [ax, ay] = p(5.9, 2.4, 7.1); return { ax, ay, lx: ax, ly: -236 }; })();
+
+// Маршрут проекта: трасса по поверхности перед фасадом и пять «вех»
+const RY = 5.42;
+const routeLine = path([[0, RY, 0.02], [12, RY, 0.02]]);
+const stakes = route.map((r, i) => {
+  const x = 1 + i * 2.6;
+  const [bx, by] = p(x, RY, 0.02);
+  const [tx, ty] = p(x, RY, 1.5);
+  return { r, bx, by, tx, ty, i };
+});
+
+const order = ['vodosnabzhenie', 'teplosnabzhenie', 'elektrosnabzhenie', 'gazosnabzhenie', 'ventilyatsiya'];
+const N = 5; // грунт объединён с водой, маршрут — со зданием
+const vb = '-360 -275 860 1000';
+---
+<section class="scene" id="napravleniya" data-node="01" aria-labelledby="scene-h">
+  <div class="container scene-grid">
+    <figure class="scene-fig" aria-hidden="false">
+      <svg class="iso" data-scene data-mode="scroll" data-steps={N} viewBox={vb} role="img" aria-labelledby="scene-title">
+        <title id="scene-title">{ui.scene.label}: {order.map((s) => D[s].label).join(', ')}</title>
+        <defs>
+          <pattern id="soil-h" width="10" height="10" patternUnits="userSpaceOnUse" patternTransform="rotate(30)">
+            <line x1="0" y1="0" x2="0" y2="10" class="soil-hl" />
+          </pattern>
+        </defs>
+
+        <!-- 0. Грунт -->
+        <g class="L fade" data-k="0" data-d="0.165">
+          <polygon class="g-top" points={G.top} />
+          <path class="g-grid" d={grid} />
+          <polygon class="g-face g-left" points={G.left} />
+          <polygon class="g-face g-right" points={G.right} />
+          <polygon class="g-hatch" points={G.right} fill="url(#soil-h)" />
+          <path class="g-strata" d={strata} />
+          <path class="g-hatch-l" d={hatch} />
+        </g>
+        <g class="L" data-k="0" data-d="0.24">
+          <path class="draw g-edge" d={G.edges} pathLength="1" />
+        </g>
+        <g class="L fade" data-k="0.12" data-d="0.15">
+          <text class="mono-t" x={p(0, 8, ZB)[0] - 4} y={p(0, 8, ZB)[1] + 34} text-anchor="start">{ui.scene.section}</text>
+          <text class="mono-t dim" x={p(12, 0, -0.6)[0] + 12} y={p(12, 0, -0.6)[1]}>{ui.scene.ground}</text>
+        </g>
+
+        <!-- 1. Водоснабжение и канализация -->
+        <IsoPipe d={nets.water.main} c="var(--sys-water)" w={9} k={0.3} dur={0.315} />
+        <IsoPipe d={nets.water.branch} c="var(--sys-water)" w={7} k={0.545} dur={0.175} />
+        <g class="L fade" data-k="0.58" data-d="0.21" style="--c:var(--sys-water)">
+          <path class="cyl-side" d={nets.water.well.sides} />
+          <ellipse class="cyl-top" cx={nets.water.well.top.cx} cy={nets.water.well.top.cy} rx={nets.water.well.top.rx} ry={nets.water.well.top.ry} />
+          <polygon class="sec" points={nets.water.sec} />
+        </g>
+        <IsoPipe d={nets.sewer.main} c="var(--sys-sewer)" w={12} k={0.44} dur={0.315} />
+        <IsoPipe d={nets.sewer.branch} c="var(--sys-sewer)" w={8} k={0.65} dur={0.175} />
+        <g class="L fade" data-k="0.685" data-d="0.14" style="--c:var(--sys-sewer)"><polygon class="sec" points={nets.sewer.sec} /></g>
+        <Callout {...nets.water.co} idx="1" text={D.vodosnabzhenie.label} href="/napravleniya/vodosnabzhenie/" k={0.685} />
+        <Callout {...nets.sewer.co} idx="1" text={D.vodosnabzhenie.scopeGroups[0].items[1]} k={0.755} wrap={20} elbow />
+
+        <!-- 2. Теплоснабжение -->
+        <g class="L fade" data-k="1" data-d="0.3">
+          <polygon class="ch-top" points={nets.heat.ch.top} />
+          <polygon class="ch-face" points={nets.heat.ch.right} />
+          <path class="ch-edge" d={nets.heat.ch.edges} />
+        </g>
+        <IsoPipe d={nets.heat.m1} c="var(--sys-heat)" w={6} k={1.1} dur={0.45} />
+        <IsoPipe d={nets.heat.m2} c="var(--sys-heat-2)" w={6} k={1.2} dur={0.45} />
+        <IsoPipe d={nets.heat.b1} c="var(--sys-heat)" w={5} k={1.5} dur={0.25} />
+        <IsoPipe d={nets.heat.b2} c="var(--sys-heat-2)" w={5} k={1.55} dur={0.25} />
+        <g class="L fade" data-k="1.6" data-d="0.2" style="--c:var(--sys-heat)">
+          <polygon class="sec" points={nets.heat.sec1} /><polygon class="sec" points={nets.heat.sec2} />
+        </g>
+        <Callout {...nets.heat.co} idx="2" text={D.teplosnabzhenie.label} href="/napravleniya/teplosnabzhenie/" k={1.6} />
+
+        <!-- 3. Электроснабжение -->
+        <g class="L" data-k="2.05" data-d="0.4"><path class="draw tape" d={nets.elec.tape} pathLength="1" /></g>
+        <IsoPipe d={nets.elec.main} c="var(--sys-elec)" w={5} k={2} dur={0.45} />
+        <IsoPipe d={nets.elec.branch} c="var(--sys-elec)" w={4} k={2.4} dur={0.25} />
+        <g class="L fade" data-k="2.5" data-d="0.2" style="--c:var(--sys-elec)"><polygon class="sec" points={nets.elec.sec} /></g>
+        <Callout {...nets.elec.co} idx="3" text={D.elektrosnabzhenie.label} href="/napravleniya/elektrosnabzhenie/" k={2.55} />
+
+        <!-- 4. Газоснабжение -->
+        <IsoPipe d={nets.gas.main} c="var(--sys-gas)" w={6} k={3} dur={0.45} />
+        <IsoPipe d={nets.gas.branch} c="var(--sys-gas)" w={5} k={3.4} dur={0.3} />
+        <g class="L fade" data-k="3.6" data-d="0.2" style="--c:var(--sys-gas)">
+          <polygon class="sec" points={nets.gas.sec} />
+          <path class="valve" d={`M${nets.gas.valve[0] - 7} ${nets.gas.valve[1] - 6} L${nets.gas.valve[0] + 7} ${nets.gas.valve[1] + 6} L${nets.gas.valve[0] + 7} ${nets.gas.valve[1] - 6} L${nets.gas.valve[0] - 7} ${nets.gas.valve[1] + 6} Z`} />
+        </g>
+        <Callout {...nets.gas.co} idx="4" text={D.gazosnabzhenie.label} href="/napravleniya/gazosnabzhenie/" k={3.6} />
+
+        <!-- 5. Здание и вентиляция -->
+        <g class="L fade rise" data-k="4" data-d="0.225">
+          <polygon class="b-face b-left" points={B.left} />
+          <polygon class="b-face b-right" points={B.right} />
+          <polygon class="b-top" points={B.top} />
+          <g class="b-win">{winL.map((w) => <polygon points={w} />)}{winR.map((w) => <polygon points={w} />)}</g>
+          <path class="b-floor" d={floors} />
+        </g>
+        <g class="L" data-k="4" data-d="0.275"><path class="draw b-edge" d={B.edges} pathLength="1" /></g>
+        <g class="L" data-k="4.15" data-d="0.2">
+          {risers.map((r) => <path class="draw riser" d={r.d} pathLength="1" style={`--c:${r.c}`} />)}
+        </g>
+        <g class="L fade rise" data-k="4.225" data-d="0.15" style="--c:var(--sys-vent)">
+          <polygon class="ahu ahu-l" points={ahu.left} />
+          <polygon class="ahu ahu-r" points={ahu.right} />
+          <polygon class="ahu ahu-t" points={ahu.top} />
+          <path class="ahu-e" d={ahu.edges} />
+        </g>
+        <IsoPipe d={duct1} c="var(--sys-vent)" w={10} k={4.275} dur={0.125} cls="duct" />
+        <IsoPipe d={duct2} c="var(--sys-vent)" w={10} k={4.3} dur={0.125} cls="duct" />
+        <g class="L" data-k="4.3" data-d="0.15"><path class="draw riser" d={shaft} pathLength="1" style="--c:var(--sys-vent)" /></g>
+        <Callout {...ventCo} idx="5" text={D.ventilyatsiya.label} href="/napravleniya/ventilyatsiya/" k={4.35} />
+
+        <!-- 6. Маршрут проекта -->
+        <g class="L" data-k="4.5" data-d="0.375"><path class="draw route-line" d={routeLine} pathLength="1" /></g>
+        {stakes.map((s) => (
+          <g class="L fade stake" data-k={4.5 + s.i * 0.08} data-d="0.1">
+            <line class="stake-pole" x1={s.bx} y1={s.by} x2={s.tx} y2={s.ty} />
+            <circle class="stake-node" cx={s.bx} cy={s.by} r="6" />
+            <rect class="stake-bg" x={s.tx + 4} y={s.ty - 13} width={s.r.t.length * 7.4 + 40} height="22" rx="3" />
+            <text class="stake-t" x={s.tx + 10} y={s.ty + 3}><tspan class="stake-n">{s.r.n}</tspan> {s.r.t}</text>
+          </g>
+        ))}
+      </svg>
+      <div class="scene-cap" aria-hidden="true"></div>
+    </figure>
+
+    <div class="scene-steps">
+      {order.map((slug, i) => {
+        const d = D[slug];
+        const last = i === order.length - 1;
+        return (
+          <article class:list={['step', { 'step-route': last }]} data-step={i} id={last ? 'marshrut' : undefined} style={`--c:var(--sys-${['water', 'heat', 'elec', 'gas', 'vent'][i]})`}>
+            {i === 0 && <p class="mono-label scene-kicker" data-cap>{ui.scene.label}</p>}
+            {i === 0 && <h2 id="scene-h" class="scene-h2">{home.directions.title}</h2>}
+            {i === 0 && <p class="muted scene-intro">{home.directions.text}</p>}
+            <p class="mono-label" data-cap><span class="sys-dot"></span>{String(i + 1).padStart(2, '0')} · {i === 0 ? ui.scene.groundNets : last ? ui.scene.building : ui.scene.step}</p>
+            <h3 data-cap><a href={`/napravleniya/${d.slug}/`}>{d.label}</a></h3>
+            <p data-cap class="step-lead">{d.cardLead}</p>
+            <ul class="tick-list">{d.scopeGroups[0].items.slice(0, 3).map((x) => <li>{x}</li>)}</ul>
+            <a class="link-arrow" href={`/napravleniya/${d.slug}/`} data-cap>{ui.openDirection}<span aria-hidden="true">→</span></a>
+            {last && (
+              <div class="step-route-box">
+                <p class="mono-label" data-cap>06 · {ui.scene.route}</p>
+                <h2 data-cap>{home.route.title}</h2>
+                <p class="muted">{home.route.text}</p>
+                <ol class="route-list" data-cap>
+                  {route.map((r) => <li><span class="mono">{r.n}</span><div><strong>{r.t}</strong><small>{r.d}</small></div></li>)}
+                </ol>
+              </div>
+            )}
+          </article>
+        );
+      })}
+    </div>
+  </div>
+</section>

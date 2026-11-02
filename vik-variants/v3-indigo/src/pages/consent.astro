@@ -1,0 +1,15 @@
+---
+import Base from '../layouts/Base.astro';
+import { consent } from '../content.mjs';
+---
+<Base title={consent.title} description={consent.description} path="/consent/" noindex>
+  <section class="page-hero">
+    <div class="container narrow-l">
+      <h1>{consent.h1}</h1>
+      <div class="statusbox"><p><strong>{consent.draftNote}</strong></p></div>
+      <p class="muted">{consent.intro}</p>
+      {consent.items.map((i) => <div class="group"><h3>{i.h}</h3><p class="muted">{i.p}</p></div>)}
+      <p class="muted">{consent.outro}</p>
+    </div>
+  </section>
+</Base>

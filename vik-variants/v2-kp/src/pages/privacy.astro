@@ -1,0 +1,20 @@
+---
+import Base from '../layouts/Base.astro';
+import PageHero from '../components/PageHero.astro';
+import { privacy } from '../content.mjs';
+import { ui } from '../ui.mjs';
+---
+<Base title={privacy.title} description={privacy.description} path="/privacy/" noindex hasForm={false}>
+  <PageHero crumbs={[{ name: ui.nav.privacy }]} title={privacy.h1} hl="10%" />
+  <section class="block">
+    <div class="container doc">
+      <div class="statusbox doc-status">
+        <p><strong>{privacy.draftNote}</strong></p>
+        <ul class="list">{privacy.openItems.map((x) => <li>{x}</li>)}</ul>
+      </div>
+      {privacy.sections.map((s) => (
+        <div><h2>{s.h}</h2>{s.p.map((t) => <p>{t}</p>)}</div>
+      ))}
+    </div>
+  </section>
+</Base>

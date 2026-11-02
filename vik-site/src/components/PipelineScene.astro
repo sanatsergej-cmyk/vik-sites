@@ -1,0 +1,168 @@
+---
+// Сквозной золотой трубопровод главной: SVG-линия рисуется при прокрутке от первого экрана до формы #intake,
+// на ней загораются узлы этапов маршрута (секции с data-node="0..4"). При прокрутке вверх откатывается.
+// Без JS и при prefers-reduced-motion текст не скрывается: линия либо не строится, либо показана целиком.
+import { route } from '../content/index.mjs';
+const labels = route.map((r) => ({ n: r.n, t: r.t }));
+---
+<div class="flow" data-flow>
+  <svg class="flow-svg" aria-hidden="true" focusable="false">
+    <defs>
+      <linearGradient id="flow-gold" x1="0" y1="0" x2="0" y2="1" gradientUnits="objectBoundingBox">
+        <stop offset="0" stop-color="#f7dd94" />
+        <stop offset=".5" stop-color="#d8a63a" />
+        <stop offset="1" stop-color="#f0c766" />
+      </linearGradient>
+      <radialGradient id="flow-head-glow">
+        <stop offset="0" stop-color="#ffe9b0" stop-opacity="1" />
+        <stop offset=".35" stop-color="#e2b04c" stop-opacity=".55" />
+        <stop offset="1" stop-color="#d8a63a" stop-opacity="0" />
+      </radialGradient>
+    </defs>
+    <path class="flow-track" d="" />
+    <path class="flow-body" d="" />
+    <path class="flow-line" d="" />
+    <g class="flow-tees"></g>
+    <g class="flow-nodes"></g>
+    <g class="flow-head" opacity="0">
+      <circle r="18" fill="url(#flow-head-glow)" />
+      <circle r="3.2" fill="#fff4d6" />
+    </g>
+  </svg>
+  <script type="application/json" data-flow-labels set:html={JSON.stringify(labels)} />
+  <slot />
+</div>
+
+<script is:inline>
+(function () {
+  var flow = document.querySelector('[data-flow]');
+  if (!flow || !('getTotalLength' in SVGPathElement.prototype)) return;
+  var NS = 'http://www.w3.org/2000/svg';
+  var svg = flow.querySelector('.flow-svg');
+  var track = svg.querySelector('.flow-track'), body = svg.querySelector('.flow-body'), line = svg.querySelector('.flow-line');
+  var nodesG = svg.querySelector('.flow-nodes'), teesG = svg.querySelector('.flow-tees'), head = svg.querySelector('.flow-head');
+  var labels = JSON.parse(flow.querySelector('[data-flow-labels]').textContent);
+  var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var L = 0, samples = [], nodes = [], ticking = false, lastLen = -1;
+
+  function el(tag, attrs) { var n = document.createElementNS(NS, tag); for (var k in attrs) n.setAttribute(k, attrs[k]); return n; }
+  // ломаная со скруглёнными углами: точки [[x,y],...] → d
+  function rounded(pts, r) {
+    var d = 'M' + pts[0][0] + ' ' + pts[0][1];
+    for (var i = 1; i < pts.length - 1; i++) {
+      var p0 = pts[i - 1], p1 = pts[i], p2 = pts[i + 1];
+      var d1 = Math.hypot(p1[0] - p0[0], p1[1] - p0[1]), d2 = Math.hypot(p2[0] - p1[0], p2[1] - p1[1]);
+      var rr = Math.min(r, d1 / 2, d2 / 2);
+      var a = [p1[0] + (p0[0] - p1[0]) * rr / d1, p1[1] + (p0[1] - p1[1]) * rr / d1];
+      var b = [p1[0] + (p2[0] - p1[0]) * rr / d2, p1[1] + (p2[1] - p1[1]) * rr / d2];
+      d += 'L' + a[0].toFixed(1) + ' ' + a[1].toFixed(1) + 'Q' + p1[0] + ' ' + p1[1] + ' ' + b[0].toFixed(1) + ' ' + b[1].toFixed(1);
+    }
+    var last = pts[pts.length - 1];
+    return d + 'L' + last[0] + ' ' + last[1];
+  }
+
+  function layout() {
+    var fr = flow.getBoundingClientRect();
+    var W = Math.round(fr.width), H = Math.round(flow.scrollHeight);
+    if (!W || !H) return;
+    svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+    svg.style.height = H + 'px';
+    var cont = flow.querySelector('.container');
+    var cl = cont ? cont.getBoundingClientRect().left - fr.left : 16;
+    var wide = cl > 84;
+    var x = wide ? Math.round(cl - 46) : Math.max(7, Math.round(cl / 2));
+    // узел ставим на уровне метки этапа: верх секции + её внутренний отступ (без учёта transform и sticky)
+    var anchors = Array.prototype.slice.call(flow.querySelectorAll('[data-node]')).map(function (s) {
+      var top = 0, n = s;
+      while (n && n !== flow) { top += n.offsetTop; n = n.offsetParent; }
+      var pad = parseFloat(getComputedStyle(s).paddingTop) || 0;
+      return { i: +s.getAttribute('data-node'), sec: s, y: Math.round(top + pad + 14), tx: Math.round(cl) };
+    }).sort(function (a, b) { return a.y - b.y; });
+    var intake = flow.querySelector('#intake .intake-form');
+    var endY = H - 40, endX = x;
+    if (intake) { var ir = intake.getBoundingClientRect(); endX = Math.round(ir.left - fr.left - (parseFloat(getComputedStyle(intake.parentElement).paddingLeft) || 6)); }
+    if (anchors.length) endY = anchors[anchors.length - 1].y + 44;
+
+    // точки трассы: старт из центра под первым экраном, уход в левый коридор, компенсаторы между узлами
+    var pts = [[Math.round(W / 2), 0], [Math.round(W / 2), 34], [x, 34]];
+    var prevY = 34;
+    anchors.forEach(function (a, k) {
+      if (wide && a.y - prevY > 520 && k > 0) {
+        var my = Math.round(prevY + (a.y - prevY) / 2), lw = Math.min(30, cl - 70);
+        if (lw > 14) pts.push([x, my - 40], [x - lw, my - 40], [x - lw, my + 40], [x, my + 40]);
+      }
+      prevY = a.y;
+    });
+    pts.push([x, endY]);
+    if (wide && endX > x + 30) pts.push([endX - 2, endY]);
+    var d = rounded(pts, wide ? 22 : 12);
+    track.setAttribute('d', d); body.setAttribute('d', d); line.setAttribute('d', d);
+    L = line.getTotalLength();
+    line.style.strokeDasharray = L + ' ' + L;
+    samples = [];
+    var N = Math.max(200, Math.round(L / 6));
+    for (var i = 0; i <= N; i++) { var p = line.getPointAtLength(L * i / N); samples.push([L * i / N, p.y, p.x]); }
+
+    // узлы
+    nodesG.textContent = ''; teesG.textContent = ''; nodes = [];
+    anchors.forEach(function (a) {
+      var len = lenAtY(a.y);
+      var g = el('g', { class: 'flow-node', transform: 'translate(' + x + ' ' + a.y + ')' });
+      g.appendChild(el('circle', { class: 'fn-halo', r: wide ? 22 : 11 }));
+      g.appendChild(el('circle', { class: 'fn-ring', r: wide ? 15 : 7 }));
+      g.appendChild(el('circle', { class: 'fn-core', r: wide ? 4 : 2.6 }));
+      if (wide && labels[a.i]) { var t = el('text', { class: 'fn-num', y: -24, 'text-anchor': 'middle' }); t.textContent = labels[a.i].n; g.appendChild(t); }
+      nodesG.appendChild(g);
+      var tee = null;
+      if (wide && a.tx - x > 40) {
+        tee = el('path', { class: 'flow-tee', d: 'M' + (x + 15) + ' ' + a.y + 'H' + (a.tx - 14), pathLength: 1 });
+        teesG.appendChild(tee);
+      }
+      nodes.push({ len: len, g: g, sec: a.sec, tee: tee, on: false });
+    });
+    lastLen = -1;
+    paint(true);
+  }
+  function lenAtY(y) {
+    // первая точка, где трасса опускается ниже y (по y трасса монотонна, горизонтальные участки проходятся сразу)
+    for (var i = 0; i < samples.length; i++) if (samples[i][1] >= y - 0.5) return samples[i][0];
+    return L;
+  }
+  function paint(force) {
+    ticking = false;
+    var len;
+    if (reduce) len = L;
+    else {
+      var fr = flow.getBoundingClientRect();
+      var headY = window.innerHeight * 0.62 - fr.top;
+      len = headY <= 0 ? 0 : lenAtY(headY);
+    }
+    if (!force && Math.abs(len - lastLen) < 0.5) return;
+    lastLen = len;
+    line.style.strokeDashoffset = String(L - len);
+    if (!reduce && len > 2 && len < L - 2) {
+      var p = line.getPointAtLength(len);
+      head.setAttribute('transform', 'translate(' + p.x.toFixed(1) + ' ' + p.y.toFixed(1) + ')');
+      head.setAttribute('opacity', '1');
+    } else head.setAttribute('opacity', '0');
+    nodes.forEach(function (n) {
+      var on = len >= n.len - 1;
+      if (on !== n.on) {
+        n.on = on;
+        n.g.classList.toggle('on', on);
+        if (n.tee) n.tee.classList.toggle('on', on);
+        n.sec.classList.toggle('is-lit', on);
+      }
+    });
+  }
+  function onScroll() { if (!ticking) { ticking = true; requestAnimationFrame(function () { paint(false); }); } }
+  var rt;
+  function relayout() { clearTimeout(rt); rt = setTimeout(layout, 120); }
+  flow.classList.add('flow-ready');
+  layout();
+  window.addEventListener('scroll', onScroll, { passive: true });
+  window.addEventListener('resize', relayout);
+  if ('ResizeObserver' in window) new ResizeObserver(relayout).observe(flow);
+  window.addEventListener('load', layout);
+})();
+</script>

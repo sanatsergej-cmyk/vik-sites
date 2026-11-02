@@ -1,0 +1,155 @@
+---
+import Base from '../../layouts/Base.astro';
+import PageHero from '../../components/PageHero.astro';
+import Pic from '../../components/Pic.astro';
+import SystemPlate from '../../components/SystemPlate.astro';
+import Scheme from '../../components/Scheme.astro';
+import Steps from '../../components/Steps.astro';
+import Faq from '../../components/Faq.astro';
+import Cards from '../../components/Cards.astro';
+import Gallery from '../../components/Gallery.astro';
+import Icon from '../../components/Icon.astro';
+import IntakeForm from '../../components/IntakeForm.astro';
+import { directions, serviceByPath, cta, photos } from '../../content.mjs';
+import { ui } from '../../ui.mjs';
+
+export function getStaticPaths() {
+  return directions.map((d) => ({ params: { slug: d.slug }, props: { d } }));
+}
+const { d } = Astro.props;
+const path = `/napravleniya/${d.slug}/`;
+const related = d.related.map((r) => serviceByPath(r)).filter(Boolean);
+const photosOn = import.meta.env.PUBLIC_PHOTOS === '1';
+const heroPhoto = photosOn ? photos.find((p) => p.dir === d.slug) : null;
+const others = directions.filter((x) => x.slug !== d.slug);
+// Своя подача шагов у каждой системы (ТЗ волны 2): поток воды, подача/обратка, участки цепи, зоны здания, трасса.
+const variant = { vodosnabzhenie: 'flow', teplosnabzhenie: 'heat', elektrosnabzhenie: 'circuit', ventilyatsiya: 'floors', gazosnabzhenie: 'trace' }[d.slug] ?? 'flow';
+const pad = (i: number) => String(i + 1).padStart(2, '0');
+---
+<Base title={d.title} description={d.description} path={path} crumbs={[{ name: ui.home, href: '/' }, { name: d.label, href: path }]}>
+  <div class={`dirpage dir-${d.slug}`}>
+  <PageHero crumbs={[{ name: ui.nav.directions, href: '/#napravleniya' }, { name: d.label }]} eyebrow={d.eyebrow} title={d.h1} lead={d.lead} meta={`${ui.dir.objects}: ${d.objects}`} ctaHref={`?direction=${d.slug}#intake`} ctaLabel={cta.primary}>
+    <Fragment slot="media">
+      {heroPhoto ? <Pic src={heroPhoto.src} alt={heroPhoto.alt} width={750} height={1000} loading="eager" /> : <SystemPlate kind={d.slug} />}
+      {heroPhoto && <span class="media-tag mono">{heroPhoto.cap}</span>}
+    </Fragment>
+  </PageHero>
+
+  <section class="block scheme-sec">
+    <div class="container">
+      <Scheme kind={d.slug} caption={d.label} />
+    </div>
+  </section>
+
+  {d.situations?.length > 0 && (
+    <section class="block">
+      <div class="container cols-3-9">
+        <h2 class="block-title">{ui.w2.situations}</h2>
+        <ol class="sit">{d.situations.map((x, i) => <li class="rv" style={`--i:${i}`}><span class="mono">{pad(i)}</span>{x}</li>)}</ol>
+      </div>
+    </section>
+  )}
+
+  <section class="block">
+    <div class="container cols">
+      <div class="rv">
+        <h2 class="block-title">{ui.dir.scope}</h2>
+        {d.scopeGroups.map((g) => (
+          <div class="group">
+            <h3>{g.title}</h3>
+            <ul class="list">{g.items.map((x) => <li>{x}</li>)}</ul>
+          </div>
+        ))}
+      </div>
+      <div class="rv">
+        <h2 class="block-title">{ui.dir.inputs}</h2>
+        <ul class="list">{d.inputs.map((x) => <li>{x}</li>)}</ul>
+        <p class="hint">{ui.dir.noDocs}</p>
+        <div class="approvers">
+          <h2 class="block-title">{d.approvers.title}</h2>
+          <p class="txt">{d.approvers.text}</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  {d.steps?.length > 0 && (
+    <section class={`block steps-sec steps-sec-${variant}`}>
+      <div class="container">
+        <h2 class="block-title">{ui.w2.steps}</h2>
+        <Steps items={d.steps} variant={variant} />
+      </div>
+    </section>
+  )}
+
+  {d.pitfalls?.length > 0 && (
+    <section class="block paper">
+      <div class="container">
+        <h2 class="block-title">{ui.w2.pitfalls}</h2>
+        <div class="pit">
+          <div class="pit-head mono" aria-hidden="true"><span>{ui.w2.pitWrong}</span><span>{ui.w2.pitRight}</span></div>
+          {d.pitfalls.map((p, i) => (
+            <div class="pit-row rv" style={`--i:${i}`}>
+              <p class="pit-wrong"><span class="mono">{pad(i)}</span>{p.t}</p>
+              <span class="pit-arrow" aria-hidden="true"><Icon name="arrow" size={20} /></span>
+              <p class="pit-right">{p.d}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  )}
+
+  {d.norms?.length > 0 && (
+    <section class="block">
+      <div class="container cols-3-9">
+        <div class="norms-head">
+          <h2 class="block-title">{ui.w2.norms}</h2>
+          <p class="norms-check mono">{ui.normsChecked}</p>
+        </div>
+        <div class="table-wrap rv">
+          <table class="norms">
+            <thead><tr><th scope="col">{ui.w2.normDoc}</th><th scope="col">{ui.w2.normTitle}</th></tr></thead>
+            <tbody>{d.norms.map((n) => <tr><th scope="row">{n.t}</th><td>{n.d}</td></tr>)}</tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  )}
+
+  {d.outputs?.length > 0 && (
+    <section class="block">
+      <div class="container cols-3-9">
+        <h2 class="block-title">{ui.w2.outputs}</h2>
+        <ul class="deliv">{d.outputs.map((x, i) => <li class="rv" style={`--i:${i}`}><Icon name="docs" size={22} /><span>{x}</span></li>)}</ul>
+      </div>
+    </section>
+  )}
+
+  <section class="block paper">
+    <div class="container">
+      <h2 class="block-title">{ui.dir.works}</h2>
+      <p class="block-sub">{ui.dir.worksText}</p>
+      <Cards items={related} query={`?direction=${d.slug}`} />
+    </div>
+  </section>
+
+  <section class="block">
+    <div class="container cols-3-9">
+      <h2 class="block-title">{ui.dir.faq}</h2>
+      <Faq items={d.faq} />
+    </div>
+  </section>
+
+  <Gallery dir={d.slug} exclude={heroPhoto?.id} />
+
+  <section class="block">
+    <div class="container">
+      <h2 class="block-title">{ui.dir.other}</h2>
+      <div class="chips">{others.map((o) => <a class="chip" href={`/napravleniya/${o.slug}/`}>{o.label}<Icon name="arrow" size={16} /></a>)}</div>
+    </div>
+  </section>
+  </div>
+
+  <IntakeForm />
+</Base>

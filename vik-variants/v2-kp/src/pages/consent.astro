@@ -1,0 +1,17 @@
+---
+import Base from '../layouts/Base.astro';
+import PageHero from '../components/PageHero.astro';
+import { consent } from '../content.mjs';
+import { ui } from '../ui.mjs';
+---
+<Base title={consent.title} description={consent.description} path="/consent/" noindex hasForm={false}>
+  <PageHero crumbs={[{ name: ui.nav.consent }]} title={consent.h1} hl="10%" />
+  <section class="block">
+    <div class="container doc">
+      <div class="statusbox doc-status"><p style="margin:0"><strong>{consent.draftNote}</strong></p></div>
+      <p>{consent.intro}</p>
+      {consent.items.map((i) => <div><h3>{i.h}</h3><p>{i.p}</p></div>)}
+      <p>{consent.outro}</p>
+    </div>
+  </section>
+</Base>
