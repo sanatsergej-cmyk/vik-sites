@@ -1,0 +1,9 @@
+---
+// Сгенерированная иллюстрация из public/gen (1376×768): <picture> webp 768/1376 + jpg. Не фото объекта.
+const { name, alt = '', class: cls = '', eager = false, sizes = '100vw' } = Astro.props;
+const b = `/gen/${name}`;
+---
+<picture class={cls}>
+  <source type="image/webp" srcset={`${b}-768.webp 768w, ${b}.webp 1376w`} sizes={sizes} />
+  <img src={`${b}.jpg`} alt={alt} width="1376" height="768" loading={eager ? 'eager' : 'lazy'} decoding="async" fetchpriority={eager ? 'high' : undefined} />
+</picture>

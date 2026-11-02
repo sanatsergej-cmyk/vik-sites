@@ -7,6 +7,7 @@ import PipelineScene from '../components/PipelineScene.astro';
 import SystemArt from '../components/SystemArt.astro';
 import ClientsBlock from '../components/ClientsBlock.astro';
 import Gallery from '../components/Gallery.astro';
+import GenPic from '../components/GenPic.astro';
 import {
   home, brand, principles, directions, services, mainServices, workServices, extraServices, stages, route, riskPoints,
   manufacturers, energy, mission, companyBlock, cta,
@@ -84,6 +85,14 @@ const dust = Array.from({ length: 14 }, (_, i) => ({
         </div>
         <p class="eta"><Icon name="clock" size={17} /> Первичная оценка: {brand.eta}</p>
       </div>
+      <nav class="hero-systems" aria-label="Направления">
+          {directions.map((d) => (
+            <a class="hs-link" href={`/napravleniya/${d.slug}/`} style={`--hue:${dirVisual[d.slug].hue}`}>
+              <span class="hs-ring"><Icon name={d.icon} size={24} /></span>
+              <span class="hs-name">{d.label}</span>
+            </a>
+          ))}
+        </nav>
     </div>
     <a class="scroll-cue" href="#napravleniya" aria-label="К направлениям"><span></span></a>
   </section>
@@ -99,6 +108,7 @@ const dust = Array.from({ length: 14 }, (_, i) => ({
           {directions.map((d, i) => (
             <li data-reveal style={`--i:${i};--hue:${dirVisual[d.slug].hue}`}>
               <a class="sys" href={`/napravleniya/${d.slug}/`}>
+                <span class="sys-cover" aria-hidden="true"><GenPic name={`dir-${d.slug}`} sizes="(max-width: 640px) 92vw, 20vw" /></span>
                 <span class="sys-ring"><Icon name={d.icon} size={34} /></span>
                 <span class="sys-name">{d.label}</span>
                 <span class="sys-lead">{d.cardLead}</span>
@@ -146,6 +156,7 @@ const dust = Array.from({ length: 14 }, (_, i) => ({
               <a class="index-row" href={`/uslugi/${s.slug}/`}>
                 <span class="ix-n">{pad(i)}</span>
                 <span class="ix-ico"><Icon name={s.icon} size={26} /></span>
+                <span class="ix-thumb" aria-hidden="true"><GenPic name={`svc-${s.slug}`} sizes="140px" /></span>
                 <span class="ix-title">{s.label}</span>
                 <span class="ix-lead">{s.cardLead}</span>
                 <span class="ix-go"><Icon name="arrow" size={18} /></span>
@@ -159,6 +170,7 @@ const dust = Array.from({ length: 14 }, (_, i) => ({
             <div class="extra-row">
               {extraServices.map((s, i) => (
                 <a class="extra-card" href={`/uslugi/${s.slug}/`} data-reveal style={`--i:${i}`}>
+                  <span class="extra-cover" aria-hidden="true"><GenPic name={`svc-${s.slug}`} sizes="(max-width: 900px) 92vw, 33vw" /></span>
                   <span class="ix-ico"><Icon name={s.icon} size={24} /></span>
                   <span class="ec-t">{s.label}</span>
                   <span class="ec-l">{s.cardLead}</span>
@@ -208,6 +220,7 @@ const dust = Array.from({ length: 14 }, (_, i) => ({
           {workServices.map((s, i) => (
             <a class="bezel work" href={`/uslugi/${s.slug}/`} data-reveal style={`--i:${i}`}>
               <span class="bezel-core">
+                <span class="work-cover" aria-hidden="true"><GenPic name={`svc-${s.slug}`} sizes="(max-width: 860px) 92vw, 50vw" /></span>
                 <span class="work-top"><span class="work-n" aria-hidden="true">{pad(i)}</span><span class="work-rule" aria-hidden="true"></span><span class="work-ico"><Icon name={s.icon} size={26} /></span></span>
                 <span class="work-title">{s.label}</span>
                 <span class="work-lead">{s.cardLead}</span>

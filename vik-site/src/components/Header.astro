@@ -17,30 +17,31 @@ const ctaHref = ['/dokumenty/', '/privacy/', '/consent/', '/404/'].includes(path
       <span class="brand-word">ВиК</span>
     </a>
     <nav id="main-nav" class="main-nav" aria-label="Основная навигация">
-      <a href="/o-kompanii/" aria-current={cur('/o-kompanii/')} style="--i:0">О компании</a>
-      <div class="has-sub" style="--i:1">
+      <div class="has-sub" style="--i:0">
         <a href="/#napravleniya" class:list={[{ 'is-cur': inDir }]}>Направления</a>
         <div class="sub">{nav.directions.map((l) => <a href={l.href} aria-current={cur(l.href)}>{l.label}</a>)}</div>
       </div>
-      <div class="has-sub" style="--i:2">
+      <div class="has-sub" style="--i:1">
         <a href="/#uslugi" class:list={[{ 'is-cur': inSvc }]}>Услуги</a>
         <div class="sub">
           {nav.services.map((l) => <a href={l.href} aria-current={cur(l.href)}>{l.label}</a>)}
-          {nav.extras.length > 0 && <span class="sub-sep">Дополнительно</span>}
+          {nav.extras.length > 0 && <span class="sub-sep">Дополнительные</span>}
           {nav.extras.map((l) => <a href={l.href} aria-current={cur(l.href)}>{l.label}</a>)}
         </div>
       </div>
-      <div class="has-sub" style="--i:3">
+      <div class="has-sub" style="--i:2">
         <a href="/#raboty" class:list={[{ 'is-cur': inWork }]}>Работы</a>
         <div class="sub">{nav.works.map((l) => <a href={l.href} aria-current={cur(l.href)}>{l.label}</a>)}</div>
       </div>
-      <div class="has-sub" style="--i:4">
+      <div class="has-sub sub-end" style="--i:3">
         <a href={nav.knowledge.href} class:list={[{ 'is-cur': inKb }]} aria-current={cur(nav.knowledge.href)}>{nav.knowledge.label}</a>
         <div class="sub sub--wide">{nav.articles.map((l) => <a href={l.href} aria-current={cur(l.href)}>{l.label}</a>)}</div>
       </div>
-      <a href="/proekty/" aria-current={cur('/proekty/')} style="--i:5">Проекты</a>
-      <a href="/kontakty/" aria-current={cur('/kontakty/')} style="--i:6">Контакты</a>
-      <a class="btn btn-gold btn-sm nav-cta" href={ctaHref} style="--i:7"><span>{cta.header}</span><span class="btn-ico"><Icon name="arrow" size={14} /></span></a>
+      <a href="/o-kompanii/" aria-current={cur('/o-kompanii/')} style="--i:4">О компании</a>
+      <a href="/proekty/" class:list={[{ 'is-cur': path?.startsWith('/proekty/') }]} aria-current={cur('/proekty/')} style="--i:5">Проекты</a>
+      <a href="/dokumenty/" aria-current={cur('/dokumenty/')} style="--i:6">Документы</a>
+      <a href="/kontakty/" aria-current={cur('/kontakty/')} style="--i:7">Контакты</a>
+      <a class="btn btn-gold btn-sm nav-cta" href={ctaHref} style="--i:8"><span>{cta.header}</span><span class="btn-ico"><Icon name="arrow" size={14} /></span></a>
     </nav>
     <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="main-nav" data-menu-toggle>
       <span class="sr-only">Меню</span>

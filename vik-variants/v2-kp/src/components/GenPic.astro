@@ -1,0 +1,9 @@
+---
+// Сгенерированное изображение из public/gen: webp 768/1376 + jpg. name — имя без расширения (dir-…, svc-…).
+const { name, alt, eager = false, imgClass = '', parallax, sizes = '(max-width: 900px) 100vw, 1376px' } = Astro.props;
+const base = `/gen/${name}`;
+---
+<picture>
+  <source type="image/webp" srcset={`${base}-768.webp 768w, ${base}.webp 1376w`} sizes={sizes} />
+  <img class={imgClass} src={`${base}.jpg`} alt={alt} width="1376" height="768" loading={eager ? 'eager' : 'lazy'} fetchpriority={eager ? 'high' : undefined} decoding="async" data-parallax={parallax} />
+</picture>

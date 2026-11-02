@@ -1,6 +1,8 @@
 ---
 import Base from '../../layouts/Base.astro';
 import Icon from '../../components/Icon.astro';
+import GenPic from '../../components/GenPic.astro';
+const artImg: Record<string, string> = { 'tekhnicheskie-usloviya-na-podklyuchenie': 'art-tu', 'vynos-setey-iz-pyatna-zastroyki': 'art-vynos', 'itp-proekt-soglasovanie-dopusk': 'art-itp', 'ispolnitelnaya-dokumentatsiya-naruzhnye-seti': 'art-ispolnitelnaya', 'tekhnicheskiy-zakazchik-i-genpodryadchik': 'art-tz', 'iskhodnye-dannye-dlya-smety': 'art-iskhodnye' };
 import IntakeForm from '../../components/IntakeForm.astro';
 import { articles, knowledgeBase, serviceByPath, directionByPath } from '../../content/index.mjs';
 const pad = (i: number) => String(i + 1).padStart(2, '0');
@@ -23,6 +25,7 @@ const topics = (a: any) => a.related.map((p: string) => serviceByPath(p) ?? dire
         {articles.map((a: any, i: number) => (
           <li data-reveal style={`--i:${i}`} class:list={[{ 'kb-wide': i === 0 }]}>
             <a class="kb-card" href={`/baza-znaniy/${a.slug}/`}>
+              <span class="kb-cover"><GenPic name={artImg[a.slug] ?? 'art-tu'} alt="" sizes="(max-width: 640px) 92vw, 33vw" /><span class="media-label">Иллюстрация</span></span>
               <span class="kb-top"><span class="kb-n">{pad(i)}</span><span class="kb-meta"><Icon name="clock" size={14} /> {a.readMin} мин · {fmt(a.updated)}</span></span>
               <span class="kb-t">{a.h1}</span>
               <span class="kb-l">{a.lead}</span>

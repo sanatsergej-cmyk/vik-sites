@@ -1,6 +1,8 @@
 ---
 import Base from '../../layouts/Base.astro';
 import Icon from '../../components/Icon.astro';
+import GenPic from '../../components/GenPic.astro';
+const artImg: Record<string, string> = { 'tekhnicheskie-usloviya-na-podklyuchenie': 'art-tu', 'vynos-setey-iz-pyatna-zastroyki': 'art-vynos', 'itp-proekt-soglasovanie-dopusk': 'art-itp', 'ispolnitelnaya-dokumentatsiya-naruzhnye-seti': 'art-ispolnitelnaya', 'tekhnicheskiy-zakazchik-i-genpodryadchik': 'art-tz', 'iskhodnye-dannye-dlya-smety': 'art-iskhodnye' };
 import IntakeForm from '../../components/IntakeForm.astro';
 import { articles, knowledgeBase, serviceByPath, directionByPath, brand, cta } from '../../content/index.mjs';
 
@@ -29,7 +31,9 @@ const ld = [
 <Base title={a.title} description={a.description} path={path} crumbs={[{ name: 'Главная', href: '/' }, { name: knowledgeBase.h1, href: '/baza-znaniy/' }, { name: a.h1, href: path }]}>
   <script type="application/ld+json" set:html={JSON.stringify(ld)} />
   <div class="read-progress" aria-hidden="true"><span data-progress></span></div>
-  <section class="page-hero art-hero">
+  <section class="page-hero art-hero ph-has-bg" data-parallax>
+    <div class="ph-bg" data-depth="0.18" aria-hidden="true"><GenPic name={artImg[a.slug] ?? 'art-tu'} alt="" eager /></div>
+    <span class="media-label ph-label">Иллюстрация</span>
     <div class="container">
       <p class="crumbs"><a href="/">Главная</a><span class="sep"></span><a href="/baza-znaniy/">{knowledgeBase.h1}</a><span class="sep"></span>Статья</p>
       <p class="eyebrow">Статья · {a.readMin} мин чтения</p>

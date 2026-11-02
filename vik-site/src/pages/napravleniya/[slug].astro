@@ -1,6 +1,7 @@
 ---
 import Base from '../../layouts/Base.astro';
 import Icon from '../../components/Icon.astro';
+import GenPic from '../../components/GenPic.astro';
 import Pic from '../../components/Pic.astro';
 import IntakeForm from '../../components/IntakeForm.astro';
 import Gallery from '../../components/Gallery.astro';
@@ -30,7 +31,9 @@ const stepsTitle: Record<string, string> = { vodosnabzhenie: 'Путь воды:
   crumbs={[{ name: 'Главная', href: '/' }, { name: d.label, href: path }]}
 >
   <div class="dir-page" style={`--hue:${v.hue}`}>
-    <section class="page-hero">
+    <section class="page-hero ph-has-bg" data-parallax>
+      <div class="ph-bg" data-depth="0.18" aria-hidden="true"><GenPic name={`dir-${d.slug}`} alt="" eager /></div>
+      <span class="media-label ph-label">Иллюстрация</span>
       <div class="container ph-grid">
         <div class="ph-copy">
           <p class="crumbs"><a href="/">Главная</a><span class="sep"></span><a href="/#napravleniya">Направления</a><span class="sep"></span>{d.label}</p>
