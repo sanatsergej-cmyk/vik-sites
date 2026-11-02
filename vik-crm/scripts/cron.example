@@ -1,0 +1,13 @@
+# /etc/cron.d/vik-crm — задания ВиК CRM. Путь /opt/vik-sites/vik-crm поменяйте на свой.
+# Установка: sudo cp scripts/cron.example /etc/cron.d/vik-crm && sudo chmod 644 /etc/cron.d/vik-crm
+SHELL=/bin/bash
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+
+# Бэкап SQLite и файлов каждую ночь в 03:30
+30 3 * * * root /opt/vik-sites/vik-crm/scripts/backup.sh >> /var/log/vik-crm-backup.log 2>&1
+
+# Напоминания о наступивших задачах в Telegram (только номер сделки и ссылка)
+*/10 * * * * root cd /opt/vik-sites/vik-crm && docker compose exec -T app python -m app.cli notify-due > /dev/null 2>&1
+
+# Проверка нового квартала в ФГИС ЦС раз в сутки
+15 6 * * * root cd /opt/vik-sites/vik-crm && docker compose exec -T app python -m app.cli check-fgis --state /srv/data/fgis_periods.json >> /var/log/vik-crm-fgis.log 2>&1

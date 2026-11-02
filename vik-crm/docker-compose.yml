@@ -1,25 +1,49 @@
+# ВиК CRM: один контейнер, SQLite и файлы в томе crmdata (/srv/data). Порт только на localhost, снаружи — через Caddy.
+x-crm: &crm
+  build: .
+  image: vik-crm:latest
+  restart: unless-stopped
+  env_file: .env
+  environment:
+    DATABASE_URL: sqlite:////srv/data/crm.db
+    STORAGE_DIR: /srv/data/files
+    BACKUP_DIR: /srv/data/backups
+    # Порт открыт только на 127.0.0.1, поэтому X-Forwarded-For от Caddy на хосте можно доверять
+    FORWARDED_ALLOW_IPS: "*"
+  volumes:
+    - crmdata:/srv/data
+  read_only: true
+  tmpfs:
+    - /tmp
+  cap_drop: [ALL]
+  security_opt:
+    - no-new-privileges:true
+  logging:
+    driver: json-file
+    options:
+      max-size: "10m"
+      max-file: "5"
+
 services:
-  db:
-    image: postgres:16-alpine
-    restart: unless-stopped
-    environment:
-      POSTGRES_USER: crm
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?задайте POSTGRES_PASSWORD}
-      POSTGRES_DB: crm
-    volumes:
-      - dbdata:/var/lib/postgresql/data
   app:
-    build: .
-    restart: unless-stopped
-    depends_on: [db]
-    env_file: .env
-    environment:
-      DATABASE_URL: postgresql+psycopg://crm:${POSTGRES_PASSWORD}@db:5432/crm
-      STORAGE_DIR: /srv/data/files
-    volumes:
-      - files:/srv/data/files
+    <<: *crm
     ports:
       - "127.0.0.1:8000:8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import sys,urllib.request; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8000/healthz', timeout=4).status == 200 else 1)"]
+      interval: 30s
+      timeout: 5s
+      start_period: 20s
+      retries: 3
+
+  # Необязательно: Telegram-бот пересчёта наценок. Запуск: docker compose --profile bot up -d
+  bot:
+    <<: *crm
+    profiles: ["bot"]
+    command: ["python", "-m", "app.cli", "run-bot"]
+    depends_on:
+      app:
+        condition: service_healthy
+
 volumes:
-  dbdata:
-  files:
+  crmdata:

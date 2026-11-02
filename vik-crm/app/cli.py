@@ -1,5 +1,6 @@
 import argparse
 import getpass
+import os
 import sys
 from pathlib import Path
 
@@ -28,9 +29,22 @@ def main() -> int:
     fg = sub.add_parser("check-fgis", help="проверить, не вышел ли новый квартал в ФГИС ЦС (запускать по cron)")
     fg.add_argument("--zone", type=int, default=127)
     fg.add_argument("--state", default="./data/fgis_periods.json")
+    bk = sub.add_parser("backup", help="резервная копия SQLite и файлов (запускать по cron, см. scripts/backup.sh)")
+    bk.add_argument("--out", default=os.getenv("BACKUP_DIR", "./data/backups"))
+    bk.add_argument("--keep", type=int, default=int(os.getenv("BACKUP_KEEP", "7")))
     args = parser.parse_args()
 
     init_db()
+    if args.cmd == "backup":
+        from .backup import run_backup
+
+        try:
+            for path in run_backup(Path(args.out), keep=args.keep):
+                print(path)
+        except RuntimeError as e:
+            print(e, file=sys.stderr)
+            return 1
+        return 0
     if args.cmd == "run-bot":
         from .bot import run
 
