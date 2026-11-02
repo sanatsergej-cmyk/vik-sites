@@ -9,6 +9,7 @@ from .config import get_settings
 from .db import get_session
 from .crm import create_site_lead, notify_new_deal, register_event
 from .models import Company, Contact, Deal, Interaction
+from .validators import normalize_contact
 
 router = APIRouter()
 
@@ -30,7 +31,11 @@ def create_lead(payload: LeadIn, x_lead_token: str = Header(""), session: Sessio
         raise HTTPException(status_code=404)
     if not secrets.compare_digest(x_lead_token.encode(), token.encode()):
         raise HTTPException(status_code=401)
-    deal = create_site_lead(session, name=payload.name, contact=payload.contact, task=payload.task, direction=payload.direction,
+    try:
+        contact = normalize_contact(payload.contact)
+    except ValueError as e:
+        raise HTTPException(status_code=422, detail=str(e))
+    deal = create_site_lead(session, name=payload.name, contact=contact, task=payload.task, direction=payload.direction,
                             service=payload.service, stage=payload.stage, object_name=payload.object)
     session.commit()
     notify_new_deal(deal)

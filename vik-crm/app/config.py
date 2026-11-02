@@ -20,6 +20,7 @@ class Settings:
     public_rate_limit: int = field(default_factory=lambda: int(os.getenv("PUBLIC_RATE_LIMIT_PER_HOUR", "10")))
     consent_version: str = field(default_factory=lambda: os.getenv("CONSENT_VERSION", "draft"))
     max_upload_mb: int = field(default_factory=lambda: int(os.getenv("MAX_UPLOAD_MB", "25")))
+    public_max_upload_mb: int = field(default_factory=lambda: int(os.getenv("PUBLIC_MAX_UPLOAD_MB", "10")))
     k_mtr: float = field(default_factory=lambda: _f("DEFAULT_K_MTR", "1.20"))
     k_smr: float = field(default_factory=lambda: _f("DEFAULT_K_SMR", "1.356"))
     vat: float = field(default_factory=lambda: _f("DEFAULT_VAT", "0.22"))
@@ -33,6 +34,11 @@ class Settings:
             "По техническим вопросам свяжитесь, пожалуйста, с нашим ответственным специалистом.",
         )
     )
+
+
+    @property
+    def public_origins(self) -> list:
+        return [o.strip().rstrip("/") for o in self.public_site_origins.split(",") if o.strip()]
 
 
 def get_settings() -> Settings:

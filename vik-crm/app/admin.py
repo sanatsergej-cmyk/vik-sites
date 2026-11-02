@@ -1,6 +1,8 @@
 from fastapi import FastAPI
 from sqladmin import Admin, ModelView
 from sqladmin.authentication import AuthenticationBackend
+from starlette.middleware import Middleware
+from starlette.middleware.sessions import SessionMiddleware
 from sqlmodel import Session, select
 
 from .db import get_engine
@@ -17,18 +19,44 @@ from .models import (
     SupplierRequest,
     User,
 )
-from .security import verify_password
+from .security import clear_failures, register_failure, throttled, verify_password
 
 
 class AdminAuth(AuthenticationBackend):
+    """Вход в /admin только для активных администраторов.
+
+    У SQLAdmin своя сессия: по умолчанию cookie без Secure и SameSite=lax, а формы админки без CSRF-токена.
+    Поэтому отдельная cookie vik_admin: Secure при HTTPS_ONLY=1, HttpOnly, SameSite=strict (браузер не отправит
+    её с чужого сайта), короткий срок жизни. Неудачные входы ограничиваются так же, как в основном интерфейсе.
+    """
+
+    def __init__(self, secret_key: str, https_only: bool = True) -> None:
+        self.middlewares = [
+            Middleware(
+                SessionMiddleware,
+                secret_key=secret_key,
+                session_cookie="vik_admin",
+                https_only=https_only,
+                same_site="strict",
+                max_age=4 * 3600,
+                path="/admin",
+            )
+        ]
+
     async def login(self, request) -> bool:
         form = await request.form()
         email = str(form.get("username", "")).strip().lower()
         password = str(form.get("password", ""))
+        key = f"admin:{request.client.host if request.client else '?'}:{email}"
+        if throttled(key):
+            return False
         with Session(get_engine()) as s:
             user = s.exec(select(User).where(User.email == email)).first()
             if not user or not user.is_active or user.role != Role.admin or not verify_password(user.password_hash, password):
+                register_failure(key)
                 return False
+            clear_failures(key)
+            request.session.clear()
             request.session["admin_uid"] = user.id
         return True
 
@@ -96,8 +124,9 @@ class AuditAdmin(ModelView, model=AuditLog):
     can_delete = False
 
 
-def mount_admin(app: FastAPI, secret_key: str) -> None:
-    admin = Admin(app, get_engine(), authentication_backend=AdminAuth(secret_key=secret_key), title="ВиК CRM — админка")
+def mount_admin(app: FastAPI, secret_key: str, https_only: bool = True) -> None:
+    backend = AdminAuth(secret_key=secret_key, https_only=https_only)
+    admin = Admin(app, get_engine(), authentication_backend=backend, title="ВиК CRM — админка")
     for view in (
         UserAdmin, CompanyAdmin, ContactAdmin, DealAdmin, InteractionAdmin,
         EstimateAdmin, FileAdmin, SupplierAdmin, SupplierRequestAdmin, AuditAdmin,
