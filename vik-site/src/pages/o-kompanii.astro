@@ -4,7 +4,7 @@ import Icon from '../components/Icon.astro';
 import Pic from '../components/Pic.astro';
 import IntakeForm from '../components/IntakeForm.astro';
 import { about, riskPoints, home, glossary, brand, principles, mission, route } from '../content/index.mjs';
-import EmblemVector from '../components/EmblemVector.astro';
+import Emblem from '../components/Emblem.astro';
 const seam = riskPoints[riskPoints.length - 1];
 const pad = (i: number) => String(i + 1).padStart(2, '0');
 const audIcons = ['building', 'clipboard', 'helmet', 'factory'];
@@ -38,16 +38,11 @@ const audIcons = ['building', 'clipboard', 'helmet', 'factory'];
 
   <section class="section seams-sec">
     <div class="container">
-      <div class="section-head split" data-reveal><div><p class="eyebrow">Подход</p><h2>{seam.t}</h2></div><p>{seam.d}</p></div>
-      <div class="seams" data-reveal>
-        <div class="seam-row seam-row--broken">
-          <span class="seam-k">Стыки</span>
-          <ol>{route.map((r) => <li><span class="sr-dot"></span>{r.t}</li>)}</ol>
-        </div>
-        <div class="seam-row seam-row--one">
-          <span class="seam-k">Один процесс</span>
-          <ol>{route.map((r) => <li><span class="sr-dot"></span>{r.t}</li>)}</ol>
-        </div>
+      <div class="steps-2col">
+        <div class="section-head" data-reveal><p class="eyebrow">Подход</p><h2>{seam.t}</h2><p>{seam.d}</p></div>
+        <ol class="num-steps">
+          {route.map((r, i) => <li data-reveal style={`--i:${i}`}><span class="ns-n">{r.n}</span><div><strong>{r.t}</strong><p>{r.d}</p></div></li>)}
+        </ol>
       </div>
     </div>
   </section>
@@ -55,7 +50,7 @@ const audIcons = ['building', 'clipboard', 'helmet', 'factory'];
   <section class="mission mission--about" data-parallax data-parallax-center>
     <div class="mission-marble" data-depth="0.12" aria-hidden="true"></div>
     <div class="container mission-inner" data-reveal>
-      <div class="mission-mark"><EmblemVector idp="ab" /></div>
+      <div class="mission-mark"><Emblem sizes="120px" alt="" /></div>
       <p class="eyebrow">{mission.title}</p>
       <p class="mission-text">{mission.text}</p>
       <p class="mission-note">{home.missionNote}</p>

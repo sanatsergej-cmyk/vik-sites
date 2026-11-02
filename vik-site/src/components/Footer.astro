@@ -2,7 +2,7 @@
 // Подвал: эмблема, слоган и принципы, контакты и CTA, колонки разделов (на телефоне — аккордеон), нижняя строка.
 // Всё из контента, без новых фактов.
 import { nav, footer, brand, principles, cta } from '../content/index.mjs';
-import EmblemVector from './EmblemVector.astro';
+import Emblem from './Emblem.astro';
 import Icon from './Icon.astro';
 const c = footer.contacts;
 const cols = [
@@ -28,7 +28,7 @@ const cols = [
   <div class="container footer-top">
     <div class="footer-brand">
       <a class="fb-logo" href="/" aria-label="ВиК — на главную">
-        <EmblemVector class="fb-mark" idp="ft" />
+        <Emblem class="fb-mark" sizes="120px" alt="" />
         <span class="footer-word" aria-hidden="true">{brand.name}</span>
       </a>
       <p class="footer-tag">{brand.tagline}</p>

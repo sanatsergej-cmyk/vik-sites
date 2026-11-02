@@ -1,15 +1,30 @@
 ---
-// Интро главной: эмблема собирается из частей, появляются «ВиК» и слоган, затем эмблема улетает
-// на своё место в первом экране. Оверлей поверх уже отрисованной страницы (контент в DOM, поисковик его видит).
+// Интро главной: эмблема собирается из частей ОРИГИНАЛЬНОЙ растровой картинки (public/brand/emblem-cut).
+// Пять треугольных сегментов вырезаны clip-path по растру: рамка, здания, вода, лист, пламя. Они влетают
+// и складываются в целое, затем появляются «ВиК» и слоган, эмблема перелетает на своё место в первом экране.
 // Показ: один раз за сессию (sessionStorage 'vik-intro'), только с JS и без prefers-reduced-motion,
 // не при переходе по якорю. Решение принимает скрипт в <head> (Base.astro): ставит html.intro-on.
-// Без класса intro-on оверлей display:none. Пропуск — клик, касание, колесо или любая клавиша. Длительность ≤ 2 с.
-import EmblemVector from './EmblemVector.astro';
+// Без класса intro-on оверлей display:none. Пропуск — клик, касание, колесо или любая клавиша. Всего ≤ 2 с.
 import { brand } from '../content/index.mjs';
+// Сегменты: clip-path в процентах картинки 825×575 (вершина треугольника ≈ 49.7% 3%, углы ≈ 5% и 94% по 93%).
+// from — откуда влетает сегмент (смещение в % ширины эмблемы, поворот в градусах), d — задержка, с.
+const segs = [
+  { k: 'frame', clip: 'polygon(evenodd, 49.7% -6%, -3% 104%, 103% 104%, 49.7% -6%, 49.7% 17%, 14% 89%, 86% 89%, 49.7% 17%)', x: 0, y: 0, r: 0, s: 1.18, d: 0.05 },
+  { k: 'towers', clip: 'polygon(49.7% 8%, 36.5% 34%, 36.5% 58%, 49.7% 56%, 63% 58%, 63% 34%)', x: 0, y: -46, r: 0, s: 1, d: 0.18 },
+  { k: 'water', clip: 'polygon(36.5% 34%, 9% 93%, 36% 93%, 49.7% 56%, 36.5% 58%)', x: -52, y: 18, r: -14, s: 1, d: 0.24 },
+  { k: 'leaf', clip: 'polygon(63% 34%, 91% 93%, 64% 93%, 49.7% 56%, 63% 58%)', x: 52, y: 18, r: 14, s: 1, d: 0.3 },
+  { k: 'flame', clip: 'polygon(49.7% 54%, 33% 101%, 66.5% 101%)', x: 0, y: 44, r: 0, s: 0.6, d: 0.36 },
+];
 ---
 <div class="intro" id="intro" aria-hidden="true">
   <div class="intro-stage">
-    <div class="intro-emblem"><EmblemVector idp="in" /></div>
+    <div class="intro-emblem">
+      {segs.map((g) => (
+        <span class={`ie-seg ie-${g.k}`} style={`--clip:${g.clip};--fx:${g.x}%;--fy:${g.y}%;--fr:${g.r}deg;--fs:${g.s};--d:${g.d}s`}>
+          <img src="/brand/emblem-cut.webp" alt="" width="825" height="575" decoding="sync" />
+        </span>
+      ))}
+    </div>
     <div class="intro-word">{brand.name}</div>
     <p class="intro-tag">{brand.tagline}</p>
   </div>
@@ -34,14 +49,14 @@ import { brand } from '../content/index.mjs';
     d.classList.remove('intro-on');
     if (fast) { d.classList.remove('intro-out'); el.classList.add('is-skip'); setTimeout(finish, 320); return; }
     d.classList.add('intro-out');
-    // перелёт эмблемы на место растровой эмблемы первого экрана (совмещаем треугольники)
+    // перелёт собранной эмблемы на место эмблемы первого экрана (та же картинка — совмещаем прямоугольники)
     var em = el.querySelector('.intro-emblem');
     var img = document.querySelector('.hero-emblem .emblem img');
     var b = img && img.getBoundingClientRect(), a = em.getBoundingClientRect();
     if (b && b.width && b.bottom > 0 && b.top < window.innerHeight) {
-      var s = (b.width * 0.887) / (a.width * 0.8667);
-      var dx = b.left + b.width * 0.481 - (a.left + a.width * 0.5);
-      var dy = b.top + b.height * 0.495 - (a.top + a.height * 0.4976);
+      var s = b.width / a.width;
+      var dx = b.left + b.width / 2 - (a.left + a.width / 2);
+      var dy = b.top + b.height / 2 - (a.top + a.height / 2);
       em.style.transform = 'translate(' + dx.toFixed(1) + 'px,' + dy.toFixed(1) + 'px) scale(' + s.toFixed(3) + ')';
     }
     el.classList.add('is-leaving');

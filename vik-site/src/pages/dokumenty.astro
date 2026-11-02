@@ -2,7 +2,7 @@
 import Base from '../layouts/Base.astro';
 import Icon from '../components/Icon.astro';
 import { documents, cta, brand } from '../content/index.mjs';
-import EmblemVector from '../components/EmblemVector.astro';
+import Emblem from '../components/Emblem.astro';
 // плейсхолдеры XXXX подсвечиваем, но не меняем
 const ph = (v: string) => /[XХ]{3,}/.test(v);
 ---
@@ -19,7 +19,7 @@ const ph = (v: string) => /[XХ]{3,}/.test(v);
     <div class="container">
       <div class="passport" data-reveal>
         <div class="pp-head">
-          <div class="pp-mark"><EmblemVector idp="pp" /></div>
+          <div class="pp-mark"><Emblem sizes="92px" alt="" /></div>
           <div><p class="pp-k">Паспорт компании</p><p class="pp-name">{brand.name}</p><p class="pp-tag">{brand.tagline}</p></div>
         </div>
         <dl class="pp-rows">
