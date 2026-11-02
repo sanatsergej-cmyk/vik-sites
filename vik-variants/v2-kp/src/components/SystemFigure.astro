@@ -10,19 +10,19 @@ const spots = {
   teplosnabzhenie: [[25, 54, h.heatNet, 'r'], [52, 57, s.inlet, 'r'], [72, 42, s.itp, 'l'], [80, 62, s.heatMeter, 'l']],
   elektrosnabzhenie: [[25, 26, s.tp, 'r'], [42, 70, s.kl, 'r'], [62, 55, h.trays, 'r'], [70, 38, s.vru, 'l']],
   ventilyatsiya: [[33, 21, h.ventEquip, 'r'], [58, 46, h.riser, 'r'], [24, 40, h.floorDucts, 'r'], [62, 70, s.duct, 'l']],
-  gazosnabzhenie: [[38, 60, s.gasUnder, 'r'], [58, 64, h.exit, 'r'], [59, 36, s.gasFacade, 'l']],
+  gazosnabzhenie: [[38, 60, s.gasUnder, 'r'], [60, 74, h.exit, 'r'], [59, 36, s.gasFacade, 'l']],
 }[slug] ?? [];
 ---
 <figure class="sysfig rv">
   <div class="sysfig-frame">
     <GenPic name={`dir-${slug}`} alt={`${ui.illustration}: ${label}`} imgClass="sysfig-img" parallax="0.03" />
     <ol class="hs" aria-label={label}>
-      {spots.map(([x, y, t, side], i) => (
+      {spots.map(([x, y, t], i) => { const side = x < 55 ? 'r' : 'l'; return (
         <li class={`hs-pt hs-${side}`} style={`--x:${x}%;--y:${y}%;--i:${i}`}>
           <span class="hs-dot" aria-hidden="true"></span>
           <span class="hs-label"><span class="mono">{String(i + 1).padStart(2, '0')}</span>{t}</span>
         </li>
-      ))}
+      ); })}
     </ol>
     <span class="media-tag mono">{ui.illustration}</span>
   </div>

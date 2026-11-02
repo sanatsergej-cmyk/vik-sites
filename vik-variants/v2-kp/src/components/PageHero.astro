@@ -1,15 +1,22 @@
 ---
 // Шапка внутренней страницы: крошки, надзаголовок, H1, лид, CTA и (по желанию) фото/схема справа.
 import { ui } from '../ui.mjs';
-const { crumbs = [], eyebrow, title, lead, meta, ctaHref, ctaLabel, hl = '30%' } = Astro.props;
+import GenPic from './GenPic.astro';
+const { crumbs = [], eyebrow, title, lead, meta, ctaHref, ctaLabel, hl = '30%', bg, bgAlt = '' } = Astro.props;
 // Слоты могут приходить из условных выражений: проверяем отрендеренное содержимое, а не только наличие имени.
 const mediaHtml = Astro.slots.has('media') ? (await Astro.slots.render('media')).trim() : '';
 const asideHtml = Astro.slots.has('aside') ? (await Astro.slots.render('aside')).trim() : '';
 const hasMedia = mediaHtml.length > 0;
 const hasAside = asideHtml.length > 0;
 ---
-<section class="page-hero">
-  <div class={`container page-hero-grid ${hasMedia || hasAside ? '' : 'single'}`}>
+<section class={`page-hero ${bg ? 'page-hero-bg' : ''}`}>
+  {bg && (
+    <div class="phb-media" aria-hidden={bgAlt ? undefined : 'true'}>
+      <GenPic name={bg} alt={bgAlt} eager imgClass="phb-img" sizes="(max-width: 900px) 100vw, 60vw" />
+      <span class="media-tag mono">{ui.illustration}</span>
+    </div>
+  )}
+  <div class={`container page-hero-grid ${(hasMedia || hasAside) && !bg ? '' : 'single'}`}>
     <div>
       <nav class="crumbs" aria-label={ui.crumbs}>
         <a href="/">{ui.home}</a>
@@ -27,8 +34,8 @@ const hasAside = asideHtml.length > 0;
       <slot />
       {ctaHref && <a class="btn btn-gold btn-lg" href={ctaHref}>{ctaLabel} <svg class="icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" /></svg></a>}
     </div>
-    {hasMedia && <div class="page-hero-media" set:html={mediaHtml} />}
-    {!hasMedia && hasAside && <aside class="page-hero-aside" set:html={asideHtml} />}
+    {!bg && hasMedia && <div class="page-hero-media" set:html={mediaHtml} />}
+    {!bg && !hasMedia && hasAside && <aside class="page-hero-aside" set:html={asideHtml} />}
   </div>
   <span class="hero-line" style={`--hl:${hl}`} aria-hidden="true"></span>
 </section>

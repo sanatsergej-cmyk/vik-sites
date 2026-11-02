@@ -1,7 +1,6 @@
 ---
 // Фирменный блок страницы услуги (волна 2): у каждой из 12 услуг своя визуализация по смыслу.
 // Всё содержимое — из полей услуги (scopeGroups, steps, extra, boundary) и photos.mjs; подписи схем — ui.sch.
-import Scheme from './Scheme.astro';
 import Steps from './Steps.astro';
 import Pic from './Pic.astro';
 import Icon from './Icon.astro';
@@ -10,7 +9,8 @@ import { ui } from '../ui.mjs';
 const { s } = Astro.props;
 const sch = ui.sch;
 const pad = (i: number) => String(i + 1).padStart(2, '0');
-const schemeKinds = ['earthworks', 'pipeline-install', 'cable-install', 'itp-design', 'relocation', 'expertise'];
+const workKinds = ['earthworks', 'pipeline-install', 'cable-install', 'itp-design'];
+const timelineKinds = [...workKinds, 'relocation', 'expertise'];
 const photosOn = import.meta.env.PUBLIC_PHOTOS === '1';
 const realPhotos = photosOn ? photos.filter((p) => !p.ai).slice(0, 4) : [];
 // РСО: «Система — Организация» из блока extra; название системы и организация разделены тире.
@@ -44,25 +44,19 @@ const orgNote = s.id === 'rso' ? s.extra?.[0]?.note : null;
 )}
 
 {s.id === 'design' && (
-  <div class="sig sig-design cols">
-    <div>
-      <h2 class="block-title">{ui.w2.sheets}</h2>
-      <p class="sheet-tabs" aria-hidden="true"><span class="mono">{sch.stageP}</span><span class="mono">{sch.stageR}</span></p>
-      <div class="sheets rv">
-        {s.scopeGroups.map((g, i) => (
-          <article class="sheet" style={`--k:${i}`}>
-            <header><span class="mono">{pad(i)}</span><span class="mono">{`${pad(i)} / ${pad(s.scopeGroups.length - 1)}`}</span></header>
-            <h3>{g.title}</h3>
-            <ul class="dash">{g.items.map((x) => <li>{x}</li>)}</ul>
-            <footer class="sheet-stamp" aria-hidden="true"><span></span><span></span><span></span></footer>
-          </article>
-        ))}
-      </div>
+  <div class="sig sig-design">
+    <h2 class="block-title">{ui.w2.sheets}</h2>
+    <div class="scope-grid">
+      {s.scopeGroups.map((g, i) => (
+        <section class="sg-col rv" style={`--i:${i}`}>
+          <p class="sg-n mono">{pad(i)}</p>
+          <h3>{g.title}</h3>
+          <ul class="dash">{g.items.map((x) => <li>{x}</li>)}</ul>
+        </section>
+      ))}
     </div>
-    <div>
-      <h2 class="block-title">{ui.w2.approvals}</h2>
-      <Steps items={s.steps} variant="route" />
-    </div>
+    <h2 class="block-title sig-second">{ui.w2.approvals}</h2>
+    <Steps items={s.steps} variant="timeline" />
   </div>
 )}
 
@@ -120,8 +114,17 @@ const orgNote = s.id === 'rso' ? s.extra?.[0]?.note : null;
   </div>
 )}
 
-{schemeKinds.includes(s.id) && (
-  <div class="sig sig-scheme">
-    <Scheme kind={s.id} caption={s.label} />
+{timelineKinds.includes(s.id) && (
+  <div class="sig sig-work">
+    <h2 class="block-title">{ui.svc.steps}</h2>
+    <Steps items={s.steps} variant="timeline" />
+    {workKinds.includes(s.id) && (
+      <>
+        <h2 class="block-title sig-second">{ui.svcScope}</h2>
+        <ol class="work-grid">
+          {s.scopeGroups.flatMap((g) => g.items).map((x, i) => <li class="rv" style={`--i:${i}`}><span class="mono">{pad(i)}</span><span>{x}</span></li>)}
+        </ol>
+      </>
+    )}
   </div>
 )}

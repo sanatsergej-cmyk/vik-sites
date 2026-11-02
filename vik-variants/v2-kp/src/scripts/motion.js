@@ -19,6 +19,9 @@ if (toggle && navEl) {
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape') set(false); });
 }
 
+/* ---------- подвал: на телефоне колонки свёрнуты (аккордеон), без JS открыты ---------- */
+if (window.matchMedia('(max-width: 767px)').matches) document.querySelectorAll('.fcol[open]').forEach((d) => d.removeAttribute('open'));
+
 /* ---------- предзаполнение формы из адреса (?direction=&service=&stage=) ---------- */
 const intake = document.querySelector('[data-intake]');
 if (intake) {

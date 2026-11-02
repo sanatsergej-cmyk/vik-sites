@@ -1393,3 +1393,7 @@ html.intro-on .hero-copy > *, html.intro-on .hero-lines .hl { animation-play-sta
 .site-footer h3 a { font: inherit; letter-spacing: inherit; }
 .footer-bottom { padding-bottom: 64px; }
 .site-footer .footer-grid h3 a { font: inherit; color: inherit; }
+
+/* кнопка консультанта прячется на первом экране узких экранов (не перекрывает CTA) */
+.vc .vc-fab{transition:transform .5s var(--ease),opacity .35s ease,background-position .6s var(--ease)}
+.vc.vc-away .vc-fab{opacity:0;transform:translateY(16px);pointer-events:none}

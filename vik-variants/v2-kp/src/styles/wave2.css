@@ -2,57 +2,6 @@
 
 :root { --warm: #d4895a; --warm-rgb: 212 137 90; }
 
-/* ---------- схемы ---------- */
-.scheme-sec { padding-block: clamp(40px, 5vw, 72px); }
-.scheme { margin: 0; position: relative; border: 1px solid var(--line); border-radius: 8px; background:
-  linear-gradient(rgb(226 236 232 / 0.035) 1px, transparent 1px) 0 0 / 40px 40px,
-  linear-gradient(90deg, rgb(226 236 232 / 0.035) 1px, transparent 1px) 0 0 / 40px 40px,
-  radial-gradient(60% 80% at 70% 40%, rgb(28 106 82 / 0.18), transparent 70%), var(--ink-2); overflow: hidden; }
-.scheme-scroll { overflow-x: auto; scrollbar-width: thin; }
-.scheme svg { display: block; width: 100%; height: auto; min-width: 640px; }
-.scheme figcaption { display: flex; gap: 12px; align-items: baseline; padding: 12px 18px; border-top: 1px solid var(--line); color: var(--muted); font-size: 0.9rem; }
-.scheme figcaption .mono { color: var(--em); }
-.sc-ground { stroke: rgb(226 236 232 / 0.5); stroke-width: 1.5; fill: none; }
-.sc-hatch, .sc-faint { stroke: rgb(226 236 232 / 0.18); stroke-width: 1; fill: none; }
-.sc-line { stroke: rgb(226 236 232 / 0.62); stroke-width: 1.6; fill: none; stroke-linejoin: round; }
-.sc-box { fill: rgb(15 18 19 / 0.7); stroke: rgb(226 236 232 / 0.45); stroke-width: 1.4; }
-.sc-pipe { stroke: var(--em); stroke-width: 4; fill: none; stroke-linecap: round; stroke-linejoin: round; }
-.sc-warm { stroke: var(--warm); stroke-width: 4; fill: none; stroke-linecap: round; stroke-linejoin: round; }
-.sc-flow { stroke: var(--em-2); stroke-width: 2; fill: none; stroke-dasharray: 3 16; stroke-linecap: round; opacity: 0.9; }
-.sc-flow-warm { stroke: #f0b48a; }
-.sc-ring { fill: var(--ink); stroke: rgb(226 236 232 / 0.6); stroke-width: 1.6; }
-.sc-ring-em { stroke: var(--em); stroke-width: 2.4; }
-.sc-node { fill: var(--em-2); }
-.sc-joint { fill: var(--ink); stroke: var(--em-2); stroke-width: 2; }
-.sc-t { font-family: var(--mono); font-size: 15px; letter-spacing: 0.06em; text-transform: uppercase; fill: rgb(231 236 234 / 0.82); }
-.sc-em { fill: var(--em-2); }
-.sc-warm-t { fill: #f0b48a; }
-.sc-dim { fill: rgb(231 236 234 / 0.45); }
-.sc-big { font-family: var(--sans); font-size: 26px; font-weight: 600; letter-spacing: -0.02em; text-transform: none; fill: var(--text); }
-.sc-layer.l1 { fill: rgb(226 236 232 / 0.12); } .sc-layer.l2 { fill: rgb(140 120 96 / 0.16); } .sc-layer.l3 { fill: rgb(110 100 86 / 0.12); }
-.sc-cut { fill: var(--ink-2); }
-.sc-bed { fill: rgb(212 190 140 / 0.14); stroke: rgb(212 190 140 / 0.35); stroke-dasharray: 4 4; }
-.sc-plot { fill: rgb(var(--em-rgb) / 0.06); stroke: rgb(226 236 232 / 0.5); stroke-dasharray: 8 6; }
-.sc-dead { stroke: rgb(229 115 107 / 0.7); stroke-width: 3; stroke-dasharray: 10 8; fill: none; }
-.sc-pipe-seg { fill: rgb(var(--em-rgb) / 0.16); stroke: var(--em); stroke-width: 2.4; }
-.sc-weld { stroke: var(--em-2); stroke-width: 3; }
-.sc-head { fill: var(--em-2); }
-.sc-orbit { transform-origin: 500px 220px; }
-
-/* прорисовка и движение — только с JS и без reduced-motion */
-.js:not(.rm) .sc-flow { animation: scFlow 1.8s linear infinite; }
-.js:not(.rm) .sc-flow-rev { animation-direction: reverse; }
-@keyframes scFlow { to { stroke-dashoffset: -38; } }
-.sc-draw { stroke-dasharray: 1 1; transition: stroke-dashoffset 1.8s var(--ease) calc(var(--d, 0) * 1s); }
-.rv-on .scheme:not(.in) .sc-draw { stroke-dashoffset: 1; }
-.js:not(.rm) .sc-orbit { animation: scOrbit 9s linear infinite; }
-@keyframes scOrbit { to { transform: rotate(360deg); } }
-/* монтаж трубопровода: секции встают на место по очереди */
-.sc-seg, .sc-weld { transition: transform 0.9s var(--ease), opacity 0.6s; transition-delay: calc(var(--k) * 0.18s); }
-.sc-weld { transition-delay: calc(var(--k) * 0.18s + 0.5s); }
-.rv-on .scheme:not(.in) .sc-seg { transform: translate(calc(60px + var(--k) * 30px), -70px); opacity: 0; }
-.rv-on .scheme:not(.in) .sc-weld { opacity: 0; }
-
 /* ---------- шаги (Steps) ---------- */
 .stp { position: relative; display: grid; gap: 0; counter-reset: s; }
 .stp > li { position: relative; }
@@ -197,23 +146,6 @@
 .resp .dash li { margin: 4px 0; }
 .resp-limit th { color: var(--muted); }
 .resp-limit td { color: var(--muted); border-left: 2px solid var(--warm); padding-left: 16px; }
-/* проектирование: стопка листов */
-.sheet-tabs { display: flex; gap: 6px; margin: -10px 0 20px; }
-.sheet-tabs span { padding: 6px 10px; border: 1px solid var(--line-2); border-radius: 3px 3px 0 0; color: var(--muted); }
-.sheet-tabs span:first-child { border-color: var(--em); color: var(--em-2); }
-.sheets { display: grid; padding-right: 44px; }
-.sheet { grid-area: 1 / 1; position: relative; padding: 24px 26px 64px; background: #e9ece8; color: var(--paper-ink); border-radius: 3px; box-shadow: 0 24px 40px -24px rgb(0 0 0 / 0.7); transform: translate(calc(var(--k) * 14px), calc(var(--k) * 14px)); transition: transform 0.5s var(--ease); }
-.sheet:not(:last-child) { pointer-events: none; }
-.sheets:hover .sheet { transform: translate(calc(var(--k) * 14px), calc(var(--k) * 46px)); }
-.sheet header { display: flex; justify-content: space-between; color: #5b6560; margin-bottom: 16px; padding-bottom: 10px; border-bottom: 1px solid rgb(18 22 21 / 0.2); }
-.sheet h3 { font-size: 1.25rem; margin-bottom: 10px; }
-.sheet .dash li { color: #4c5652; }
-.sheet .dash li::before { background: #1f8f6c; }
-.sheet-stamp { position: absolute; right: 16px; bottom: 14px; display: grid; grid-template-columns: 60px 40px 30px; border: 1px solid rgb(18 22 21 / 0.35); }
-.sheet-stamp span { height: 22px; border-left: 1px solid rgb(18 22 21 / 0.35); } .sheet-stamp span:first-child { border-left: 0; }
-.sheet:nth-child(1) { background: #dfe3df; } .sheet:nth-child(2) { background: #e4e7e3; } .sheet:nth-child(3) { background: #e9ece8; }
-.sig-design { align-items: start; }
-.sig-design .sheets { margin-bottom: 60px; }
 /* РСО: организации и путь документа */
 .orgmap { display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); gap: clamp(24px, 4vw, 64px); align-items: start; }
 .org-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
@@ -254,7 +186,6 @@
   .orgmap, .org-list { grid-template-columns: 1fr; }
   .org-core { position: relative; top: 0; }
   .smr-strip { grid-template-columns: 1fr 1fr; }
-  .sheet { padding: 20px 20px 56px; }
 }
 @media (max-width: 640px) {
   .resp thead { display: none; }
@@ -398,10 +329,7 @@ html:not(.js) .read-progress { display: none; }
 /* ---------- контакты ---------- */
 .contact-map-sec .eyebrow { margin-bottom: 10px; }
 
-@media (prefers-reduced-motion: reduce) {
-  .sc-draw { stroke-dashoffset: 0 !important; }
-  .sc-seg, .sc-weld { transform: none !important; opacity: 1 !important; }
-}
+
 
 /* длинные слова в заголовках внутренних страниц на 390 («ресурсоснабжающими») не должны упираться в край */
 @media (max-width: 520px) {

@@ -20,8 +20,8 @@ const related = s.related.map((r) => serviceByPath(r)).filter(Boolean);
 const groupLabel = s.group === 'main' ? ui.nav.services : s.group === 'extra' ? ui.extrasLabel : ui.nav.works;
 const groupHref = s.group === 'main' ? '/#uslugi' : s.group === 'extra' ? undefined : '/#raboty';
 // Блоки, которые фирменная визуализация уже показывает (чтобы не дублировать на странице).
-const hideSteps = ['design', 'rso', 'smr', 'connection'].includes(s.id);
-const hideScope = ['design', 'handover'].includes(s.id);
+const hideSteps = ['design', 'rso', 'smr', 'connection', 'earthworks', 'pipeline-install', 'cable-install', 'itp-design', 'relocation', 'expertise'].includes(s.id);
+const hideScope = ['design', 'handover', 'earthworks', 'pipeline-install', 'cable-install', 'itp-design'].includes(s.id);
 const hideExtra = ['rso'].includes(s.id);
 const isTz = s.id === 'technical-customer';
 // Оглавление справа в шапке: названия групп состава работ, а если группа одна — её пункты.
@@ -29,22 +29,7 @@ const groups = s.scopeGroups ?? [];
 const scopeIdx = groups.length > 1 ? groups.map((g) => g.title) : (groups[0]?.items ?? []).slice(0, 6);
 ---
 <Base title={s.title} description={s.description} path={path} crumbs={[{ name: ui.home, href: '/' }, { name: s.label, href: path }]}>
-  <PageHero crumbs={[{ name: groupLabel, href: groupHref }, { name: s.label }]} eyebrow={s.eyebrow} title={s.h1} lead={s.lead} ctaHref={`?service=${s.id}#intake`} ctaLabel={cta.primary} hl="45%">
-    {isTz && (
-      <Fragment slot="media">
-        <Pic src="/img/itp-render.jpg" alt={ui.renderAlt} width={928} height={970} loading="eager" />
-        <span class="media-tag mono">{ui.illustration}</span>
-      </Fragment>
-    )}
-    {!isTz && scopeIdx.length > 0 && (
-      <Fragment slot="aside">
-        <p class="pha-label mono">{ui.scopeIndex}</p>
-        <ol class="pha-list">
-          {scopeIdx.map((t, i) => <li><span class="mono">{String(i + 1).padStart(2, '0')}</span>{t}</li>)}
-        </ol>
-      </Fragment>
-    )}
-  </PageHero>
+  <PageHero crumbs={[{ name: groupLabel, href: groupHref }, { name: s.label }]} eyebrow={s.eyebrow} title={s.h1} lead={s.lead} ctaHref={`?service=${s.id}#intake`} ctaLabel={cta.primary} hl="45%" bg={`svc-${s.slug}`} bgAlt={`${ui.illustration}: ${s.label}`} />
 
   <section class={`block sig-sec sig-sec-${s.id}`}>
     <div class="container">
