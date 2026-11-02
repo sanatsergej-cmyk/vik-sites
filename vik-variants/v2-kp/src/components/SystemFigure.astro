@@ -1,30 +1,43 @@
 ---
-// Изометрический разрез системы (public/gen/dir-<slug>) с выносками: точки-маркеры проявляются при прокрутке.
-// Подписи — служебные термины (ui.sch / ui.hs), позиции в процентах подобраны по картинке.
+// Изометрический разрез системы (public/gen/dir-<slug>) с выносками.
+// Маркеры и картинка лежат в одном слое .sysfig-stage: параллакс и scale(1.14) двигают их вместе,
+// поэтому координаты — проценты исходной картинки 1376×768 и точка всегда стоит на своём элементе.
+// <768 px: на картинке только крупные номера, подписи — нумерованным списком под картинкой
+// (список .hs-legend — только визуальный, скринридер читает подписи из .hs, они остаются в DOM).
+// ≥768 px: подпись у маркера; side — где подпись: 'l' слева, 'r' справа, 't' над точкой, 'b' под точкой.
 import GenPic from './GenPic.astro';
 import { ui } from '../ui.mjs';
 const { slug, label } = Astro.props;
 const s = ui.sch, h = ui.hs;
+// [x %, y %, подпись, сторона подписи]
 const spots = {
-  vodosnabzhenie: [[24, 64, s.cityMain, 'l'], [35, 44, s.well, 'r'], [59, 52, s.inlet, 'r'], [77, 50, s.meter, 'l']],
-  teplosnabzhenie: [[25, 54, h.heatNet, 'r'], [52, 57, s.inlet, 'r'], [72, 42, s.itp, 'l'], [80, 62, s.heatMeter, 'l']],
-  elektrosnabzhenie: [[25, 26, s.tp, 'r'], [42, 70, s.kl, 'r'], [62, 55, h.trays, 'r'], [70, 38, s.vru, 'l']],
-  ventilyatsiya: [[33, 21, h.ventEquip, 'r'], [58, 46, h.riser, 'r'], [24, 40, h.floorDucts, 'r'], [62, 70, s.duct, 'l']],
-  gazosnabzhenie: [[38, 60, s.gasUnder, 'r'], [60, 74, h.exit, 'r'], [59, 36, s.gasFacade, 'l']],
+  vodosnabzhenie: [[33, 65, s.cityMain, 'r'], [35, 42, s.well, 'r'], [59.5, 52, s.inlet, 't'], [75.5, 53.5, s.meter, 'b']],
+  teplosnabzhenie: [[28, 58, h.heatNet, 'r'], [53, 54.5, s.inlet, 'r'], [67, 44, s.itp, 'r'], [71.5, 67, s.heatMeter, 'l']],
+  elektrosnabzhenie: [[25, 27, s.tp, 'r'], [42, 70, s.kl, 'r'], [67, 19, h.trays, 'l'], [71, 40, s.vru, 'l']],
+  ventilyatsiya: [[31, 22, h.ventEquip, 'r'], [26, 40, h.floorDucts, 'r'], [59.3, 46, h.riser, 'r'], [67, 72, s.duct, 'r']],
+  gazosnabzhenie: [[38, 59.5, s.gasUnder, 'l'], [58.4, 63, h.exit, 'r'], [58.5, 28, s.gasFacade, 'l']],
 }[slug] ?? [];
+const num = (i) => String(i + 1);
 ---
 <figure class="sysfig rv">
   <div class="sysfig-frame">
-    <GenPic name={`dir-${slug}`} alt={`${ui.illustration}: ${label}`} imgClass="sysfig-img" parallax="0.03" />
-    <ol class="hs" aria-label={label}>
-      {spots.map(([x, y, t], i) => { const side = x < 55 ? 'r' : 'l'; return (
-        <li class={`hs-pt hs-${side}`} style={`--x:${x}%;--y:${y}%;--i:${i}`}>
-          <span class="hs-dot" aria-hidden="true"></span>
-          <span class="hs-label"><span class="mono">{String(i + 1).padStart(2, '0')}</span>{t}</span>
-        </li>
-      ); })}
-    </ol>
+    <div class="sysfig-stage" data-parallax="0.03">
+      <GenPic name={`dir-${slug}`} alt={`${ui.illustration}: ${label}`} imgClass="sysfig-img" />
+      <ol class="hs" aria-label={label}>
+        {spots.map(([x, y, t, side], i) => (
+          <li class={`hs-pt hs-${side}`} style={`--x:${x}%;--y:${y}%;--i:${i}`}>
+            <span class="hs-dot" aria-hidden="true">{num(i)}</span>
+            <span class="hs-label">{t}</span>
+          </li>
+        ))}
+      </ol>
+    </div>
     <span class="media-tag mono">{ui.illustration}</span>
   </div>
+  <ol class="hs-legend" aria-hidden="true">
+    {spots.map(([, , t], i) => (
+      <li><span class="hs-legend-n">{num(i)}</span>{t}</li>
+    ))}
+  </ol>
   <figcaption><span class="mono">{ui.sysImage}</span>{label}</figcaption>
 </figure>
